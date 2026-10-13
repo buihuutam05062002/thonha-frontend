@@ -33,17 +33,20 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const userId = useAuth().user?.id;
     const confirm = useConfirm();
 
-    const load = useCallback(async (showError = true) => {
-        try {
-            const data = await getRepairRequestById(requestId);
-            setRequest(data);
-            setError('');
-        } catch (e) {
-            if (showError) setError(e.message);
-        }
+    // Dùng chuỗi .then (không async/await) để setState chỉ nằm trong callback bất đồng bộ —
+    // gọi load() trong effect không vi phạm rule react-hooks/set-state-in-effect.
+    const load = useCallback((showError = true) => {
+        return getRepairRequestById(requestId)
+            .then((data) => {
+                setRequest(data);
+                setError('');
+            })
+            .catch((e) => {
+                if (showError) setError(e.message);
+            });
     }, [requestId]);
 
-    
+
     useEffect(() => {
         load();
     }, [load]);
@@ -51,40 +54,38 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const live = !!request && !TERMINAL.includes(request.status);
     const tracking = request?.status === 'ON_THE_WAY' && request.lat != null && request.lng != null;
 
-    
-    const loadWorkerLocation = useCallback(async () => {
-        try {
-            setWorkerLoc(await getWorkerLocation(requestId));
-        } catch {
-            /* bỏ qua: sẽ nhận vị trí qua WebSocket hoặc lần thử sau */
-        }
+
+    const loadWorkerLocation = useCallback(() => {
+        // bỏ qua lỗi: sẽ nhận vị trí qua WebSocket hoặc lần thử sau
+        return getWorkerLocation(requestId).then(setWorkerLoc).catch(() => {});
     }, [requestId]);
     useEffect(() => {
         if (tracking) loadWorkerLocation();
-        else setWorkerLoc(null);
     }, [tracking, loadWorkerLocation]);
+    // Chỉ hiển thị vị trí thợ khi đang theo dõi (thay cho việc setWorkerLoc(null) trong effect)
+    const shownWorkerLoc = tracking ? workerLoc : null;
 
-    
+
     const handleMessage = useCallback((msg) => {
-        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return; 
-        if (msg?.type === 'WORKER_LOCATION') { 
+        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return;
+        if (msg?.type === 'WORKER_LOCATION') {
             setWorkerLoc({lat: msg.lat, lng: msg.lng, updatedAt: msg.timestamp});
             return;
         }
         clearTimeout(refreshTimer.current);
-        refreshTimer.current = setTimeout(() => load(false), 300); 
+        refreshTimer.current = setTimeout(() => load(false), 300);
     }, [requestId, load]);
     useEffect(() => () => clearTimeout(refreshTimer.current), []);
 
-    
+
     const wsConnected = useUserTopics(live ? userId : null, ['requests', 'tracking'], handleMessage);
 
-    
+
     useEffect(() => {
         if (wsConnected) load(false);
     }, [wsConnected, load]);
 
-    
+
     useEffect(() => {
         const onVisible = () => {
             if (document.visibilityState === 'visible') load(false);
@@ -93,7 +94,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [load]);
 
-    
+
     useEffect(() => {
         if (!live || wsConnected) return undefined;
         const id = setInterval(() => {
@@ -113,7 +114,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
             setRequest(await cancelRepairRequest(requestId));
         } catch (e) {
             setActionError(e.message);
-            load(false); 
+            load(false);
         } finally {
             setCancelling(false);
         }
@@ -146,7 +147,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         );
     }
 
-    
+
     const stageKey = request.status === 'MATCHING' ? 'PENDING_MATCH' : request.status;
     const stageIndex = STAGES.indexOf(stageKey);
     const isTerminalBad = request.status === 'NOT_FOUND' || request.status === 'CANCELLED';
@@ -211,10 +212,10 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
                     {tracking && (
                         <>
                             <p className="section-title" style={{marginTop: 20}}><span>Vị trí thợ</span></p>
-                            <WorkerTrackingMap customer={{lat: Number(request.lat), lng: Number(request.lng)}} worker={workerLoc}/>
+                            <WorkerTrackingMap customer={{lat: Number(request.lat), lng: Number(request.lng)}} worker={shownWorkerLoc}/>
                             <p className="muted" style={{margin: '6px 0'}}>
-                                {workerLoc
-                                    ? `Cập nhật lúc ${new Date(workerLoc.updatedAt).toLocaleTimeString('vi-VN')}`
+                                {shownWorkerLoc
+                                    ? `Cập nhật lúc ${new Date(shownWorkerLoc.updatedAt).toLocaleTimeString('vi-VN')}`
                                     : 'Đang chờ vị trí của thợ...'}
                             </p>
                         </>

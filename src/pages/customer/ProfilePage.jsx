@@ -17,7 +17,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
     const [addresses, setAddresses] = useState([]);
     const [name, setName] = useState('');
     const [address, setAddress] = useState(emptyAddress);
-    const [editingId, setEditingId] = useState(null); 
+    const [editingId, setEditingId] = useState(null);
     const [showAddress, setShowAddress] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -28,23 +28,26 @@ export default function ProfilePage({onBack, onLoggedOut}) {
     const debounceRef = useRef(null);
     const fileRef = useRef(null);
 
-    async function load() {
-        setLoading(true);
-        setError('');
-        try {
-            const [u, a] = await Promise.all([getMe(), getAddresses()]);
-            setUser(u);
-            setName(u.fullName || '');
-            setAddresses(a);
-        } catch (e) {
-            setError(e.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
+    // Tải hồ sơ + địa chỉ khi mở trang. loading/error đã khởi tạo sẵn nên không cần setState đồng bộ
+    // đầu effect (rule react-hooks/set-state-in-effect); mọi setState nằm sau await.
     useEffect(() => {
-        load();
+        let mounted = true;
+        (async () => {
+            try {
+                const [u, a] = await Promise.all([getMe(), getAddresses()]);
+                if (!mounted) return;
+                setUser(u);
+                setName(u.fullName || '');
+                setAddresses(a);
+            } catch (e) {
+                if (mounted) setError(e.message);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     async function save(e) {
@@ -54,7 +57,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
         try {
             const u = await updateMe({fullName: name});
             setUser(u);
-            saveSession({user: u}); 
+            saveSession({user: u});
         } catch (e) {
             setError(e.message);
         } finally {
@@ -64,7 +67,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     async function onPickAvatar(e) {
         const file = e.target.files?.[0];
-        e.target.value = ''; 
+        e.target.value = '';
         if (!file) return;
         if (!file.type.startsWith('image/')) {
             setError('Chỉ chấp nhận file ảnh');
@@ -125,7 +128,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                 fullAddress: address.fullAddress,
                 lat: address.lat !== '' && address.lat != null ? Number(address.lat) : null,
                 lng: address.lng !== '' && address.lng != null ? Number(address.lng) : null,
-                defaultAddress: !!address.defaultAddress 
+                defaultAddress: !!address.defaultAddress
             };
             if (editingId) await updateAddress(editingId, payload);
             else await createAddress(payload);
@@ -168,7 +171,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     const [locating, setLocating] = useState(false);
 
-    
+
     async function useMyLocation() {
         setLocating(true);
         setError('');
