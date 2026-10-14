@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {
-    ArrowLeft, Camera, Check, Droplet, LocateFixed, Refrigerator, Sparkles, WashingMachine, Wind, Wrench, X, Zap,
+    ArrowLeft, Camera, Check, Droplet, Loader2, LocateFixed, Refrigerator, Sparkles, WashingMachine, Wind, Wrench, X, Zap,
 } from 'lucide-react';
 import {createRepairRequest} from '../../api/repairRequestApi';
 import {classifyIncident} from '../../api/aiApi';
@@ -465,8 +465,10 @@ export default function CreateRequestPage() {
 
                             <div className="ai-box">
                                 <button type="button" className="btn secondary" onClick={analyzeWithAi}
-                                        disabled={aiLoading}>
-                                    <Sparkles size={18} aria-hidden="true"/>
+                                        disabled={aiLoading} aria-busy={aiLoading}>
+                                    {aiLoading
+                                        ? <Loader2 size={18} className="spin" aria-hidden="true"/>
+                                        : <Sparkles size={18} aria-hidden="true"/>}
                                     {aiLoading ? 'AI đang phân tích...' : 'Phân tích bằng AI'}
                                 </button>
                                 <p className="hint">AI đọc mô tả và ảnh để gợi ý loại sửa chữa (điện, nước, máy giặt...).

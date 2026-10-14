@@ -4,6 +4,7 @@ import {cancelRepairRequest, getRepairRequestById, getWorkerLocation} from '../.
 import WorkerTrackingMap from '../../components/customer/WorkerTrackingMap';
 import ChatBox from '../../components/chat/ChatBox';
 import QuotationPanel from '../../components/chat/QuotationPanel';
+import PaymentPanel from '../../components/customer/PaymentPanel';
 import ReviewPanel from '../../components/chat/ReviewPanel';
 import ComplaintPanel from '../../components/chat/ComplaintPanel';
 import {useAuth} from '../../auth/useAuth';
@@ -29,6 +30,8 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const [cancelling, setCancelling] = useState(false);
     const [actionError, setActionError] = useState('');
     const [workerLoc, setWorkerLoc] = useState(null);
+    const [acceptedQuotation, setAcceptedQuotation] = useState(null);
+    const [paymentVersion, setPaymentVersion] = useState(0);
     const refreshTimer = useRef(null);
     const userId = useAuth().user?.id;
     const confirm = useConfirm();
@@ -72,6 +75,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
             setWorkerLoc({lat: msg.lat, lng: msg.lng, updatedAt: msg.timestamp});
             return;
         }
+        if (msg?.type === 'PAYMENT_SUCCESS') setPaymentVersion((v) => v + 1);
         clearTimeout(refreshTimer.current);
         refreshTimer.current = setTimeout(() => load(false), 300);
     }, [requestId, load]);
@@ -184,7 +188,14 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
                     )}
 
                     {showWorker && request.workerId != null && (
-                        <QuotationPanel requestId={requestId} role="customer" active={!TERMINAL.includes(request.status)}/>
+                        <QuotationPanel requestId={requestId} role="customer" active={!TERMINAL.includes(request.status)}
+                                        onLoaded={(list) => setAcceptedQuotation(list.find((q) => q.status === 'ACCEPTED') ?? null)}/>
+                    )}
+
+                    {showWorker && request.workerId != null && (
+                        <PaymentPanel requestId={requestId} requestStatus={request.status}
+                                      acceptedAmount={acceptedQuotation?.totalAmount ?? null}
+                                      version={`${request.updatedAt ?? ''}|${paymentVersion}`}/>
                     )}
 
                     {showWorker && request.workerId != null && (
