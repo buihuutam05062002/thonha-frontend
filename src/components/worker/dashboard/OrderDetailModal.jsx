@@ -27,6 +27,7 @@ function Row({ label, children }) {
   );
 }
 
+/** Chi tiết đơn của thợ + nút chuyển sang bước kế tiếp (nhập giá khi hoàn thành). */
 export function OrderDetailModal({ orderId, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -65,7 +66,7 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
       onChanged?.();
     } catch (err) {
       setActionError(parseApiError(err).message || "Không cập nhật được trạng thái, vui lòng thử lại.");
-      onChanged?.(); 
+      onChanged?.(); // trạng thái có thể đã đổi ở nơi khác
     } finally {
       setSaving(false);
     }
@@ -133,6 +134,7 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
                 role="worker"
                 active={detail.status !== "COMPLETED"}
                 onLoaded={(list) => {
+                  // điền sẵn giá hoàn thành = báo giá khách đã chấp nhận (thợ vẫn sửa được)
                   const accepted = list.find((q) => q.status === "ACCEPTED");
                   if (accepted) setPrice((p) => p || String(Math.round(Number(accepted.totalAmount))));
                 }}

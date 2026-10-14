@@ -1,6 +1,8 @@
 import axiosClient from "./axiosClient";
 
 /**
+ * Ví thợ (trả trước hoa hồng).
+ *
  * Phía thợ (quyền WORKER):
  * - GET  /api/v1/worker/wallet
  * - GET  /api/v1/worker/wallet/transactions?page=&size=        (mới nhất trước)
@@ -11,6 +13,8 @@ import axiosClient from "./axiosClient";
  * - GET  /api/v1/admin/wallets/{workerId}/transactions?page=&size=
  * - POST /api/v1/admin/wallets/{workerId}/top-up       { amount, referenceCode?, note? }
  * - POST /api/v1/admin/wallets/{workerId}/adjustments  { type: ADJUSTMENT_CREDIT|ADJUSTMENT_DEBIT, amount, reason }
+ *
+ * Số tiền là số nguyên VND. Số dư có thể âm (công nợ hoa hồng).
  */
 
 export const TXN_LABELS = {
@@ -20,15 +24,19 @@ export const TXN_LABELS = {
   ADJUSTMENT_DEBIT: "Điều chỉnh giảm",
 };
 
+/** Nhãn loại giao dịch (ưu tiên nhãn BE gửi kèm, dự phòng bảng trên). */
 export const txnLabel = (t) => t.typeLabel || TXN_LABELS[t.type] || t.type;
 
+/** Số tiền trong sổ cái đã mang dấu: dương = vào ví, âm = bị trừ. */
 export const isCredit = (t) => Number(t.amount) >= 0;
 
+// ---------------------------------------------------------------- thợ
 export const getMyWallet = () => axiosClient.get("/worker/wallet");
 
 export const getMyWalletTransactions = ({ page = 0, size = 15 } = {}) =>
   axiosClient.get("/worker/wallet/transactions", { params: { page, size } });
 
+// ---------------------------------------------------------------- admin
 export const fetchWallets = ({ keyword, negativeOnly = false, page = 0, size = 8 } = {}) =>
   axiosClient.get("/admin/wallets", {
     params: { keyword: keyword?.trim() || undefined, negativeOnly, page, size },

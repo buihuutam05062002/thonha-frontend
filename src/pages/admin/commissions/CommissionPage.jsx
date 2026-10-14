@@ -1,8 +1,8 @@
 import { useState } from "react";
 import CommissionReport from "./CommissionReport";
 import CommissionPolicies from "./CommissionPolicies";
-import "../worker-approval/WorkerApprovalPage.css"; 
-import "../user-management/UserManagement.css"; 
+import "../worker-approval/WorkerApprovalPage.css"; // khung trang + tab dạng viên thuốc dùng chung
+import "../user-management/UserManagement.css"; // style phân trang dùng chung
 import "./Commission.css";
 
 const TABS = [

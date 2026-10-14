@@ -1,6 +1,7 @@
 import { MapPin, Briefcase, Clock, AlertTriangle } from "lucide-react";
 import { formatRelative } from "../../../utils/format";
 
+/** Danh sách hồ sơ dạng thẻ: đủ thông tin để admin nhận diện và ưu tiên xử lý. */
 export default function PendingTable({ profiles, loading, error, selectedId, onSelect }) {
   if (loading && profiles.length === 0) {
     return (

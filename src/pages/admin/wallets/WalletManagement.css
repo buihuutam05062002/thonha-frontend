@@ -1,3 +1,4 @@
+/* Bổ sung cho trang Ví thợ. Bố cục chung (wa-*) lấy từ WorkerApprovalPage.css. */
 
 .wl-check { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 12.5px; color: #5a3a3e; cursor: pointer; }
 .wl-check input { accent-color: #b24a55; width: 15px; height: 15px; }
@@ -5,6 +6,7 @@
 .wl-amount { font-size: 13.5px; white-space: nowrap; color: #1e6b33; }
 .wl-neg { color: #b02a37 !important; }
 
+/* ---------- thẻ số dư ---------- */
 .wl-balance-card { background: #f9f1f1; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
 .wl-balance-card > span { font-size: 12px; color: #8a4b52; }
 .wl-balance-card > strong { font-size: 28px; line-height: 1.15; color: #1e6b33; }
@@ -20,6 +22,7 @@
 .wl-action-primary { background: #b24a55; border-color: #b24a55; color: #fff; }
 .wl-action-primary:hover { background: #9c3f49; }
 
+/* ---------- form nạp / điều chỉnh ---------- */
 .wl-form { display: flex; flex-direction: column; gap: 8px; border: 1px solid #eadcdd; border-radius: 14px; padding: 16px; background: #fffafa; }
 .wl-form h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #b24a55; }
 .wl-form label { font-size: 13px; font-weight: 600; margin-top: 4px; }
@@ -40,6 +43,7 @@
 .wl-segment button.active { background: #3fae5c; color: #fff; font-weight: 600; }
 .wl-segment button.wl-segment-debit { background: #e05a5a; }
 
+/* ---------- sổ cái ---------- */
 .wl-txns { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .wl-txns.is-loading { opacity: .6; }
 .wl-txn { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid #f0e4e4; border-radius: 12px; }

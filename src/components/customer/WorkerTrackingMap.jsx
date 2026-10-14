@@ -2,6 +2,8 @@ import {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Bike, Home} from 'lucide-react';
 
+// Goong Maps JS (nhánh của Mapbox GL) nạp từ CDN lúc cần, không phải thêm dependency.
+// Cần biến môi trường VITE_GOONG_MAPTILES_KEY (key "Maptiles" của Goong, khác key API dùng ở backend).
 const GOONG_VERSION = '1.0.9';
 const GOONG_JS = `https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@${GOONG_VERSION}/dist/goong-js.js`;
 const GOONG_CSS = `https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@${GOONG_VERSION}/dist/goong-js.css`;
@@ -34,6 +36,7 @@ function loadGoong() {
     return goongPromise;
 }
 
+/** Marker tròn có icon lucide (dùng chính bộ icon của app). Trả về {el, destroy}. */
 function makePin(Icon, background) {
     const el = document.createElement('div');
     el.style.cssText =
@@ -45,6 +48,7 @@ function makePin(Icon, background) {
 }
 
 /**
+ * Bản đồ (Goong) theo dõi thợ đang trên đường tới.
  * @param {{lat:number,lng:number}} customer  vị trí nhà khách
  * @param {{lat:number,lng:number,updatedAt:number}|null} worker  vị trí thợ mới nhất
  */
@@ -53,7 +57,7 @@ export default function WorkerTrackingMap({customer, worker}) {
     const mapRef = useRef(null);
     const workerMarkerRef = useRef(null);
     const fittedRef = useRef(false);
-    const pinsRef = useRef([]);
+    const pinsRef = useRef([]); // để dọn các React root của marker
     const [ready, setReady] = useState(false);
     const [failed, setFailed] = useState(false);
 
@@ -67,7 +71,7 @@ export default function WorkerTrackingMap({customer, worker}) {
                 const map = new goongjs.Map({
                     container: boxRef.current,
                     style: STYLE_URL,
-                    center: [customer.lng, customer.lat], 
+                    center: [customer.lng, customer.lat], // Goong/Mapbox dùng thứ tự [kinh độ, vĩ độ]
                     zoom: 15,
                 });
                 map.addControl(new goongjs.NavigationControl({showCompass: false}), 'top-right');

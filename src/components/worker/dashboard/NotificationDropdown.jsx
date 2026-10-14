@@ -1,6 +1,7 @@
 import { Card, Badge } from "react-bootstrap";
 import { formatRelative, formatVnd } from "../../../utils/format";
 
+/** Thông báo được suy ra từ dữ liệu dashboard thật (chưa có kênh thông báo riêng ở backend). */
 function buildItems(incoming, orders) {
   const items = [];
   incoming.forEach((r) =>

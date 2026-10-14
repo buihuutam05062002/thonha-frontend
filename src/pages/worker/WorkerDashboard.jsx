@@ -29,11 +29,11 @@ import { ScheduleModal } from "../../components/worker/schedule/ScheduleModal";
 import { WalletCard } from "../../components/worker/wallet/WalletCard";
 import { WalletModal } from "../../components/worker/wallet/WalletModal";
 
-
+// Realtime qua WebSocket. Chỉ khi mất kết nối mới quay về polling thưa để không bị "mù".
 const FALLBACK_POLL_MS = 30000;
-
+// Gửi vị trí GPS định kỳ khi thợ đang sẵn sàng (backend coi vị trí quá 3 phút là đã cũ)
 const LOCATION_PUSH_MS = 20000;
-
+// Có đơn đang trên đường tới khách: gửi dày hơn để khách thấy thợ di chuyển mượt
 const TRACKING_PUSH_MS = 5000;
 
 export default function WorkerDashboard() {
@@ -56,7 +56,7 @@ export default function WorkerDashboard() {
   const [respondError, setRespondError] = useState(null);
   const mounted = useRef(true);
 
-  
+  // đặt lại true khi mount: React.StrictMode (dev) chạy mount -> cleanup -> mount
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -92,17 +92,17 @@ export default function WorkerDashboard() {
     }
   }, []);
 
-  
+  // Tải lại hồ sơ (trạng thái sẵn sàng, số đơn đang làm có thể đổi khi nhận/hủy đơn)
   const refreshProfile = useCallback(() => {
     getMyWorkerProfile()
       .then((fresh) => { if (fresh && mounted.current) setProfile(fresh); })
       .catch(() => {});
   }, []);
 
-  
+  // ---- Realtime: backend đẩy sự kiện qua WebSocket, FE chỉ cần tải lại dashboard ----
   const refreshTimer = useRef(null);
   const handleSocketMessage = useCallback(() => {
-    
+    // gộp nhiều sự kiện đến liên tiếp (vd: mời 1 lúc nhiều thợ) thành 1 lần tải
     clearTimeout(refreshTimer.current);
     refreshTimer.current = setTimeout(() => { loadDashboard(); refreshProfile(); }, 300);
   }, [loadDashboard, refreshProfile]);
@@ -110,16 +110,16 @@ export default function WorkerDashboard() {
 
   const userId = authUser?.id;
 
-  
+  // Kết quả xét duyệt hồ sơ (duyệt / từ chối / thu hồi): tải lại hồ sơ để đổi màn hình ngay
   const handleAccountMessage = refreshProfile;
   const accountConnected = useUserTopics(profile ? userId : null, ["account"], handleAccountMessage);
-  
+  // bù sự kiện bị lỡ khi mất kết nối (vd: được duyệt lúc thợ đang offline/đổi mạng)
   useEffect(() => {
     if (accountConnected) handleAccountMessage();
   }, [accountConnected, handleAccountMessage]);
   const wsConnected = useUserTopics(approved ? userId : null, ["matching"], handleSocketMessage);
 
-  
+  // tải lần đầu + khi người dùng quay lại tab
   useEffect(() => {
     if (!approved) return undefined;
     loadDashboard();
@@ -128,12 +128,12 @@ export default function WorkerDashboard() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [approved, loadDashboard]);
 
-  
+  // mỗi lần (kết nối lại) WebSocket thành công: tải lại để bù các sự kiện bị lỡ lúc mất mạng
   useEffect(() => {
     if (approved && wsConnected) loadDashboard();
   }, [approved, wsConnected, loadDashboard]);
 
-  
+  // dự phòng: chỉ polling khi WebSocket đang không kết nối được
   useEffect(() => {
     if (!approved || wsConnected) return undefined;
     const id = setInterval(() => {
@@ -142,10 +142,10 @@ export default function WorkerDashboard() {
     return () => clearInterval(id);
   }, [approved, wsConnected, loadDashboard]);
 
-  
-  
+  // Thợ đang sẵn sàng: lấy GPS ngay rồi gửi định kỳ để hệ thống ghép đơn gần nhất.
+  // Lưu ý: trình duyệt chỉ gửi được khi tab còn mở.
   const availability = profile?.availabilityStatus;
-  
+  // Thợ có đơn đang làm vẫn phải gửi vị trí dù BUSY/OFFLINE: khách cần thấy thợ đang tới
   const hasOngoing = (profile?.ongoingJobsCount ?? 0) > 0;
   const onTheWay = (dashboard?.activeOrders ?? []).some((o) => o.status === "ON_THE_WAY");
   useEffect(() => {
@@ -197,13 +197,13 @@ export default function WorkerDashboard() {
     setRespondError(null);
     try {
       await respondToMatching(req.requestId, req.matchingLogId, result);
-      const fresh = await getMyWorkerProfile().catch(() => null); 
+      const fresh = await getMyWorkerProfile().catch(() => null); // trạng thái/ số đơn có thể đổi
       if (fresh && mounted.current) setProfile(fresh);
     } catch (err) {
       setRespondError(parseApiError(err).message || "Không thể gửi phản hồi, vui lòng thử lại.");
     } finally {
       if (mounted.current) setBusyId(null);
-      loadDashboard(); 
+      loadDashboard(); // yêu cầu có thể đã hết hạn hoặc thợ khác đã nhận
     }
   };
 

@@ -46,6 +46,7 @@ function TransactionList({ txns, loading, error, page, onPage }) {
   );
 }
 
+/** Chi tiết một ví: số dư, nạp tiền / điều chỉnh, sổ cái giao dịch. Mount lại (key) khi đổi thợ để đóng form. */
 export default function WalletDetail({
   wallet, loading, error, txns, txLoading, txError, txPage, onTxPage, onTopUp, onAdjust,
 }) {

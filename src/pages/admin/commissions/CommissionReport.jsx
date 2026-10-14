@@ -27,6 +27,7 @@ const PRESETS = [
   { key: "all", label: "Tất cả", range: () => ({ from: "", to: "" }) },
 ];
 
+/** Báo cáo hoa hồng: tổng hợp theo khoảng ngày + danh sách từng đơn đã chốt. */
 export default function CommissionReport() {
   const [presetKey, setPresetKey] = useState("month");
   const [input, setInput] = useState(() => PRESETS[2].range());

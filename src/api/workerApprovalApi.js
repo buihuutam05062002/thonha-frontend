@@ -17,6 +17,7 @@ export const DOC_LABELS = {
 
 export const docLabel = (t) => DOC_LABELS[t] ?? t;
 
+/** Lấy danh sách hồ sơ (đã được BE trả đủ thông tin tài khoản, chuyên môn, giấy tờ). */
 export async function fetchWorkerProfiles({ status, keyword, city, page = 0, size = 8 } = {}) {
   return axiosClient.get("/admin/worker-profiles", {
     params: {
@@ -25,6 +26,7 @@ export async function fetchWorkerProfiles({ status, keyword, city, page = 0, siz
       city: city?.trim() || undefined,
       page,
       size,
+      // Hồ sơ chờ duyệt: cũ nhất lên đầu (xử lý theo thứ tự nộp). Các tab khác: mới xử lý lên đầu.
       sort: status === "PENDING" ? "id,asc" : status ? "reviewedAt,desc" : "id,desc",
     },
   });

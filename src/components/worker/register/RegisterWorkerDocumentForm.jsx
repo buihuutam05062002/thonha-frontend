@@ -8,8 +8,8 @@ import { DocumentUploadField } from "../../ui/DocumentUploadField";
 const hasDoc = (docs, type) => (docs || []).some((d) => d.type === type);
 
 /**
- * @param {boolean} [resubmit]  
- * @param {Array}   [existingDocuments] 
+ * @param {boolean} [resubmit]  nộp lại hồ sơ bị từ chối: giấy tờ đã có thì không bắt chọn lại
+ * @param {Array}   [existingDocuments] giấy tờ hiện có của hồ sơ (từ BE)
  */
 export function RegisterWorkerDocumentsForm({ basicInfo, onBack, onSuccess, resubmit = false, existingDocuments = [] }) {
   const keepFront = resubmit && hasDoc(existingDocuments, "CCCD_FRONT");
@@ -62,10 +62,12 @@ export function RegisterWorkerDocumentsForm({ basicInfo, onBack, onSuccess, resu
         return;
       }
       const response = await registerWorker(payload, uploads);
-
+      // BE vừa cấp role WORKER trong DB, nhưng token/user trong localStorage vẫn là bản cũ
+      // -> lấy token mới để dashboard thợ không bị 403 và giao diện nhận đúng role.
       try {
         saveSession(await refreshToken());
-      } catch {/*hello3*/
+      } catch {
+        // bỏ qua: lần đăng nhập sau vẫn có role WORKER
       }
       onSuccess(response);
     } catch (err) {

@@ -25,6 +25,7 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 const startOfWeek = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const hhmm = (t) => String(t).slice(0, 5);
 
+/** Quản lý lịch làm việc theo tuần: thêm / đổi trạng thái / xóa khung giờ rảnh và bận. */
 export function ScheduleModal({ onClose }) {
   const confirm = useConfirm();
   const today = useMemo(() => new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), []);

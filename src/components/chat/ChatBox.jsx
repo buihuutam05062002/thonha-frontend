@@ -28,7 +28,10 @@ function mergeById(list, incoming) {
     return [...map.values()].sort((a, b) => a.id - b.id);
 }
 
-
+/**
+ * Khung chat giữa khách và thợ cho một yêu cầu. Dùng cho cả hai phía.
+ * Chỉ nên render khi yêu cầu đã có thợ nhận (BE trả lỗi nếu chưa có).
+ */
 export default function ChatBox({requestId}) {
     const userId = useAuth().user?.id;
     const [chat, setChat] = useState(null);
@@ -94,6 +97,7 @@ export default function ChatBox({requestId}) {
     }, [userId, seen]);
 
     const wsConnected = useUserTopics(userId, ['chat'], handleEvent);
+    // kết nối lại thành công: bù các tin bị lỡ lúc mất mạng
     useEffect(() => {
         if (wsConnected && chatIdRef.current) loadLatest(chatIdRef.current).catch(() => {});
     }, [wsConnected, loadLatest]);
@@ -102,6 +106,7 @@ export default function ChatBox({requestId}) {
         if (open && chat) seen(chat.id);
     }, [open, chat, seen]);
 
+    // tự cuộn xuống cuối khi có tin mới (trừ lúc người dùng đang đọc tin cũ)
     useEffect(() => {
         const el = listRef.current;
         if (open && el && stickBottom.current) el.scrollTop = el.scrollHeight;

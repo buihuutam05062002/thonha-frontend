@@ -9,7 +9,8 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger, onResu
   const titleId = useId();
   const messageId = useId();
 
-
+  // <dialog> mở bằng showModal() cho sẵn: khoá thao tác phần còn lại của trang, bẫy focus, phím Esc,
+  // và nằm ở "top layer" nên luôn hiện trên cả modal Bootstrap đang mở bên dưới.
   useEffect(() => {
     const dialog = ref.current;
     if (dialog && !dialog.open) dialog.showModal();
@@ -20,10 +21,12 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger, onResu
       ref={ref}
       aria-labelledby={titleId}
       aria-describedby={message ? messageId : undefined}
+      // Esc: chặn việc <dialog> tự đóng, để state do provider quản lý
       onCancel={(e) => {
         e.preventDefault();
         onResult(false);
       }}
+      // bấm vào vùng nền mờ (chính phần tử <dialog>, vì nội dung bên trong phủ kín) = Huỷ
       onClick={(e) => {
         if (e.target === e.currentTarget) onResult(false);
       }}
@@ -43,6 +46,7 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger, onResu
         {cancelText !== null && (
           <button
             type="button"
+            // Focus mặc định vào "Huỷ": nhấn Enter nhầm sẽ không thực hiện thao tác nguy hiểm
             autoFocus
             onClick={() => onResult(false)}
             className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -69,7 +73,7 @@ function normalize(options) {
     title: o.title ?? "Xác nhận",
     message: o.message ?? "",
     confirmText: o.confirmText ?? "Đồng ý",
-    cancelText: o.cancelText === undefined ? "Huỷ" : o.cancelText, 
+    cancelText: o.cancelText === undefined ? "Huỷ" : o.cancelText, // null = chỉ có nút xác nhận (dạng thông báo)
     danger: !!o.danger,
   };
 }
@@ -83,7 +87,7 @@ export default function ConfirmProvider({ children }) {
   const confirm = useCallback(
     (options) =>
       new Promise((resolve) => {
-        pendingRef.current?.resolve(false); 
+        pendingRef.current?.resolve(false); // đang có hộp thoại khác thì coi như đã huỷ
         const next = { id: nextId++, options: normalize(options), resolve };
         pendingRef.current = next;
         setCurrent(next);
@@ -99,6 +103,7 @@ export default function ConfirmProvider({ children }) {
     pending.resolve(result);
   }, []);
 
+  // Provider bị gỡ khi đang mở hộp thoại: không để Promise treo vô thời hạn
   useEffect(() => () => pendingRef.current?.resolve(false), []);
 
   return (

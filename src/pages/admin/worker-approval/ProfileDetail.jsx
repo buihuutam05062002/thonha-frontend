@@ -83,6 +83,7 @@ export default function ProfileDetail({ profile, loading, error, busy, onApprove
   const [confirming, setConfirming] = useState(false);
   const [viewer, setViewer] = useState(null);
 
+  // đổi hồ sơ thì đóng mọi form đang mở
   useEffect(() => {
     setRejecting(false); setReason(""); setConfirming(false); setViewer(null);
   }, [profile?.id]);
@@ -94,8 +95,8 @@ export default function ProfileDetail({ profile, loading, error, busy, onApprove
   const pending = profile.approvalStatus === "PENDING";
   const approved = profile.approvalStatus === "APPROVED";
   const rejected = profile.approvalStatus === "REJECTED";
-  const canReject = pending || approved;  
-  const canApprove = pending || rejected; 
+  const canReject = pending || approved;  // approved -> thu hồi
+  const canApprove = pending || rejected; // rejected -> duyệt lại
   const docsOf = (t) => profile.documents.filter((d) => d.type === t);
   const hasFront = docsOf("CCCD_FRONT").length > 0;
   const hasBack = docsOf("CCCD_BACK").length > 0;

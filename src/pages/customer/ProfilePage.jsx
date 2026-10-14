@@ -17,7 +17,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
     const [addresses, setAddresses] = useState([]);
     const [name, setName] = useState('');
     const [address, setAddress] = useState(emptyAddress);
-    const [editingId, setEditingId] = useState(null); 
+    const [editingId, setEditingId] = useState(null); // null = đang thêm mới
     const [showAddress, setShowAddress] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -54,7 +54,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
         try {
             const u = await updateMe({fullName: name});
             setUser(u);
-            saveSession({user: u}); 
+            saveSession({user: u}); // đồng bộ user đã lưu trong localStorage
         } catch (e) {
             setError(e.message);
         } finally {
@@ -64,7 +64,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     async function onPickAvatar(e) {
         const file = e.target.files?.[0];
-        e.target.value = ''; 
+        e.target.value = ''; // cho phép chọn lại cùng một file
         if (!file) return;
         if (!file.type.startsWith('image/')) {
             setError('Chỉ chấp nhận file ảnh');
@@ -125,7 +125,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                 fullAddress: address.fullAddress,
                 lat: address.lat !== '' && address.lat != null ? Number(address.lat) : null,
                 lng: address.lng !== '' && address.lng != null ? Number(address.lng) : null,
-                defaultAddress: !!address.defaultAddress 
+                defaultAddress: !!address.defaultAddress // luôn gửi boolean, tránh null
             };
             if (editingId) await updateAddress(editingId, payload);
             else await createAddress(payload);
@@ -168,7 +168,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     const [locating, setLocating] = useState(false);
 
-    
+    // Dùng GPS: lấy tọa độ hiện tại, đổi ngược ra địa chỉ chữ để khách kiểm tra/sửa lại
     async function useMyLocation() {
         setLocating(true);
         setError('');

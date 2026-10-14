@@ -25,7 +25,11 @@ function Stars({value, size = 20, onPick, onHover}) {
     );
 }
 
-
+/**
+ * Đánh giá sau khi hoàn thành. role = "customer": chưa đánh giá thì hiện form, đã đánh giá thì hiện lại;
+ * role = "worker": chỉ xem đánh giá khách để lại (không hiện gì nếu chưa có).
+ * Chỉ render khi yêu cầu đã COMPLETED.
+ */
 export default function ReviewPanel({requestId, role}) {
     const userId = useAuth().user?.id;
     const [loaded, setLoaded] = useState(false);
@@ -52,6 +56,7 @@ export default function ReviewPanel({requestId, role}) {
         load();
     }, [load]);
 
+    // thợ đang mở chi tiết đơn: khách vừa đánh giá thì hiện ngay
     useUserTopics(role === 'worker' ? userId : null, ['matching'], (msg) => {
         if (msg?.type === 'REVIEW_RECEIVED' && Number(msg.requestId) === Number(requestId)) load();
     });
@@ -65,7 +70,7 @@ export default function ReviewPanel({requestId, role}) {
             setReview(await createReview(requestId, rating, comment));
         } catch (err) {
             setError(err.message);
-            load(); 
+            load(); // có thể đã đánh giá ở tab khác
         } finally {
             setBusy(false);
         }

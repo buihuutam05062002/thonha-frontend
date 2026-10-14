@@ -22,7 +22,11 @@ const TONE = {
     EXPIRED: {bg: '#f3f4f6', fg: '#6b7280'},
 };
 
-
+/**
+ * Báo giá của một yêu cầu. role = "worker": gửi báo giá; role = "customer": chấp nhận / từ chối.
+ * `active` = yêu cầu còn đang thực hiện (thợ chỉ gửi được khi active).
+ * `onLoaded(list)` báo danh sách báo giá cho component cha (vd: điền sẵn giá hoàn thành).
+ */
 export default function QuotationPanel({requestId, role, active = true, onLoaded}) {
     const userId = useAuth().user?.id;
     const confirm = useConfirm();
@@ -89,6 +93,7 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
         });
     }
 
+    // khách chưa nhận được báo giá nào thì không cần hiện khung
     if (role === 'customer' && list.length === 0 && !loadError) return null;
 
     return (

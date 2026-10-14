@@ -7,9 +7,9 @@ import axiosClient from "./axiosClient";
  *
  * Trả về:
  * {
- *   categoryId: number | null,  
+ *   categoryId: number | null,   // null = AI chưa đủ chắc chắn, để khách tự chọn
  *   categoryName: string | null,
- *   confidence: number,     
+ *   confidence: number,          // 0..1
  *   summary: string,
  *   reason: string
  * }

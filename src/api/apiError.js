@@ -8,6 +8,7 @@ const NETWORK_MESSAGE =
  * @param {Error} error
  */
 export function parseApiError(error) {
+  // Lỗi axios thô (còn response từ server)
   if (axios.isAxiosError(error) && error.response?.data) {
     const data = error.response.data;
     return {
@@ -28,7 +29,7 @@ export function parseApiError(error) {
     };
   }
 
-  // Lỗi thường (vd: new Error("...")) → giữ nguyên thông điệp
+  // Lỗi thường (vd: new Error("...")) -> giữ nguyên thông điệp
   if (error instanceof Error && error.message && !axios.isAxiosError(error)) {
     return { code: "UNKNOWN", message: error.message, status: 0, errors: null };
   }

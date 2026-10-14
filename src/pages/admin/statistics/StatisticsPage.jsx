@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchAdminStatistics } from "../../../api/statisticsApi";
 import { formatPercent, formatVnd, toIsoDate } from "../../../utils/format";
-import "../worker-approval/WorkerApprovalPage.css"; 
-import "../commissions/Commission.css"; 
+import "../worker-approval/WorkerApprovalPage.css"; // khung trang (wa-*)
+import "../commissions/Commission.css"; // panel, thẻ số liệu, nút chọn ngày, bảng (cm-*)
 import "./Statistics.css";
 
 const MAX_DAYS = 366;
@@ -252,6 +252,7 @@ function StatCard({ label, value, sub, highlight }) {
   );
 }
 
+/** Biểu đồ cột theo ngày bằng CSS thuần (không thêm thư viện). Di chuột / chạm vào cột để xem số liệu. */
 function BarChart({ days, valueOf, format, unit }) {
   const max = Math.max(0, ...days.map(valueOf));
   if (max === 0) return <p className="wa-empty">Chưa có số liệu trong khoảng thời gian này</p>;
@@ -282,6 +283,7 @@ function BarChart({ days, valueOf, format, unit }) {
   );
 }
 
+/** Thanh ngang so sánh số lượng giữa các nhóm. */
 function HBars({ rows, empty }) {
   const max = Math.max(0, ...rows.map((r) => r.count));
   if (max === 0) return <p className="wa-empty">{empty}</p>;

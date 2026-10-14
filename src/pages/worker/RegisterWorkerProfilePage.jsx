@@ -10,7 +10,7 @@ import { RegisterWorkerDocumentsForm } from "../../components/worker/register/Re
 
 export default function RegisterWorkerProfilePage() {
   const navigate = useNavigate();
-  
+  // Hồ sơ bị từ chối -> dashboard chuyển sang đây kèm hồ sơ cũ để sửa và nộp lại
   const resubmitProfile = useLocation().state?.resubmitProfile ?? null;
   const resubmit = Boolean(resubmitProfile);
   const [profile, setProfile] = useState(null);

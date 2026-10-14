@@ -1,6 +1,7 @@
 import axiosClient from "./axiosClient";
 
 /**
+ * Báo giá
  *
  * Backend endpoints:
  * - POST  /api/v1/quotations                    (thợ)  { requestId, totalAmount, note? }
@@ -8,6 +9,8 @@ import axiosClient from "./axiosClient";
  * - PATCH /api/v1/quotations/{id}/accept        (khách)
  * - PATCH /api/v1/quotations/{id}/reject        (khách)
  *
+ * Realtime: khách nhận { type: "NEW_QUOTATION" } ở /topic/user/{id}/requests,
+ *           thợ nhận { type: "QUOTATION_ACCEPTED" | "QUOTATION_REJECTED" } ở /topic/user/{id}/matching.
  */
 
 export const QUOTATION_MIN_AMOUNT = 1000;

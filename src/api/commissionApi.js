@@ -2,10 +2,10 @@ import axiosClient from "./axiosClient";
 
 /**
  * Hoa hồng (quyền ADMIN).
- * - GET /api/v1/admin/commission-policies   
- * - PUT /api/v1/admin/commission-policies   
- *       categoryId bỏ trống 
- * - GET /api/v1/admin/commissions?from=YYYY-MM-DD&to=YYYY-MM-DD&page=&size=  
+ * - GET /api/v1/admin/commission-policies   -> { defaultRatePercent, defaultFromConfig, categoryPolicies[] }
+ * - PUT /api/v1/admin/commission-policies   { categoryId?: number, ratePercent, active? }
+ *       categoryId bỏ trống = tỷ lệ mặc định toàn hệ thống. Chỉ áp dụng cho đơn hoàn thành từ lúc lưu.
+ * - GET /api/v1/admin/commissions?from=YYYY-MM-DD&to=YYYY-MM-DD&page=&size=   (từ ngày - đến ngày, gồm cả ngày `to`)
  * - GET /api/v1/admin/commissions/summary?from=&to=
  */
 

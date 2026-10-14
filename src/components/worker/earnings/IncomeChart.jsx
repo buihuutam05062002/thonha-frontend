@@ -9,6 +9,7 @@ const CHART_HEIGHT = 160;
 const num = (v) => Number(v) || 0;
 const pad = (n) => String(n).padStart(2, "0");
 
+/** Nhãn dưới cột: tuần = thứ, tháng = ngày, khoảng dài = ngày/tháng; khoảng dài chỉ ghi một số cột cho khỏi đè nhau. */
 function axisLabel(date, days) {
   if (days <= 7) return DAY[date.getDay()];
   if (days <= 31) return String(date.getDate());
@@ -22,6 +23,7 @@ function labelStep(days) {
 }
 
 /**
+ * Biểu đồ cột theo ngày: chiều cao cột = doanh thu, phần màu cam = thực nhận, phần xám = hoa hồng đã trừ.
  * @param {{date:string, grossAmount:number, commissionAmount:number, workerAmount:number, orders:number}[]} daily
  */
 export function IncomeChart({ daily }) {

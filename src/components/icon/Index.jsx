@@ -13,6 +13,8 @@ import {
   Zap,
 } from "lucide-react";
 
+// Icon dùng chung của khu vực thợ - bọc lại từ lucide-react để giữ nguyên tên export cũ.
+// Icon trang trí nên ẩn khỏi screen reader; nút chỉ có icon cần tự thêm aria-label.
 
 const ACTIVE_COLOR = "#F5820D";
 const ACTIVE_FILL = "#FFF0E0";

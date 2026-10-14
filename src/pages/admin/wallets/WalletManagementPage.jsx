@@ -6,8 +6,8 @@ import {
 import { formatRelative, formatVnd } from "../../../utils/format";
 import Pagination from "../user-management/Pagination";
 import WalletDetail from "./WalletDetail";
-import "../user-management/UserManagement.css";
-import "../worker-approval/WorkerApprovalPage.css"; 
+import "../user-management/UserManagement.css"; // style phân trang dùng chung
+import "../worker-approval/WorkerApprovalPage.css"; // bố cục danh sách + chi tiết, hộp thoại dùng chung
 import "./WalletManagement.css";
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
@@ -32,8 +32,8 @@ export default function WalletManagementPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState("");
 
-  const [reloadKey, setReloadKey] = useState(0); 
-  const [notice, setNotice] = useState(null); 
+  const [reloadKey, setReloadKey] = useState(0); // tăng lên để tải lại chi tiết + sổ cái sau khi đổi số dư
+  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
   const noticeTimer = useRef(null);
 
   const showNotice = (type, text) => {
@@ -49,6 +49,7 @@ export default function WalletManagementPage() {
     try {
       const res = await fetchWallets({ ...filters, page });
       setList(res);
+      // giữ lựa chọn nếu ví vẫn còn trong trang, nếu không chọn ví đầu tiên
       setSelectedId((cur) => (res.content.some((w) => w.workerId === cur) ? cur : res.content[0]?.workerId ?? null));
     } catch (e) {
       setListError(e.message);
@@ -72,6 +73,7 @@ export default function WalletManagementPage() {
     return () => { cancelled = true; };
   }, [selectedId, reloadKey]);
 
+  // sổ cái giao dịch
   useEffect(() => {
     if (!selectedId) { setTxns(EMPTY_PAGE); return undefined; }
     let cancelled = false;
@@ -109,6 +111,7 @@ export default function WalletManagementPage() {
     setFilters({ keyword: "", negativeOnly: false });
   };
 
+  // Sau khi đổi số dư: về trang đầu của sổ cái (giao dịch mới nhất ở trên cùng) và tải lại danh sách
   const afterChange = (message) => {
     showNotice("success", message);
     setTxPage(0);
@@ -116,6 +119,7 @@ export default function WalletManagementPage() {
     loadList();
   };
 
+  // Các hàm dưới ném lỗi lên form để hiển thị ngay tại form (vd: mã tham chiếu bị trùng)
   const handleTopUp = async (payload) => {
     await topUpWallet(selectedId, payload);
     afterChange(`Đã nạp ${formatVnd(payload.amount)} vào ví của ${detail?.workerName ?? "thợ"}.`);

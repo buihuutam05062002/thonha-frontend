@@ -1,6 +1,19 @@
 import axios from "axios";
 import { expireSession, getAccessToken, getRefreshToken, saveSession } from "./session";
 
+/**
+ * Unified Axios client for Thonha FE
+ *
+ * Backend trả về wrapper ApiResponse:
+ * { success, code, message, data, errors, timestamp, path }
+ *
+ * Client này:
+ *  - tự bóc `data` khi `success = true`
+ *  - ném Error có cấu trúc (message, code, errors, status) khi thất bại
+ *  - với response KHÔNG có wrapper (vd: /admin/users trả thẳng Page, /maps trả JSON của Goong)
+ *    thì trả nguyên body
+ *  - tự refresh access token khi gặp 401 (trừ các endpoint /auth/*)
+ */
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
@@ -13,7 +26,8 @@ const axiosClient = axios.create({
   },
 });
 
-
+// Các endpoint xác thực: 401 ở đây nghĩa là sai thông tin đăng nhập / refresh token hỏng,
+// KHÔNG phải access token hết hạn -> không được thử refresh.
 const isAuthEndpoint = (url = "") => /\/auth\/(login|register|refresh|logout)/.test(url);
 
 const STATUS_MESSAGES = {
@@ -40,6 +54,7 @@ function normalizeError(error) {
     message = STATUS_MESSAGES[status] || error.message || "Có lỗi xảy ra";
   }
 
+  // Lỗi validation: hiển thị luôn lỗi của field đầu tiên cho dễ hiểu
   if (isObj && body.code === "VALIDATION_ERROR" && body.errors && typeof body.errors === "object") {
     const first = Object.values(body.errors)[0];
     if (first) message = String(first);
@@ -132,6 +147,7 @@ axiosClient.interceptors.response.use(
           throw new Error("No access token in refresh response");
         }
 
+        // BE xoay vòng refresh token: token cũ bị thu hồi ngay -> BẮT BUỘC lưu token mới
         saveSession(auth);
 
         originalRequest.headers.Authorization = `Bearer ${auth.accessToken}`;

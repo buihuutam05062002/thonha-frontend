@@ -82,13 +82,14 @@ function ReviewItem({ review }) {
   );
 }
 
+/** Tab "Đánh giá": điểm trung bình, phân bố số sao và danh sách nhận xét có phân trang. */
 export function ReviewsTab({ active }) {
   const [summary, setSummary] = useState(null);
   const [page, setPage] = useState(0);
-  const [data, setData] = useState(null); 
+  const [data, setData] = useState(null); // {content, totalPages, totalElements}
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const seq = useRef(0);
+  const seq = useRef(0); // bỏ qua kết quả của lần gọi cũ khi người dùng đã đổi trang
 
   const load = useCallback(async () => {
     const mine = ++seq.current;
@@ -110,6 +111,7 @@ export function ReviewsTab({ active }) {
     }
   }, [page]);
 
+  // chỉ tải khi tab đang mở (và tải lại mỗi lần quay lại tab để có đánh giá mới)
   useEffect(() => {
     if (active) load();
   }, [active, load]);

@@ -20,12 +20,13 @@ const ICONS = {
     wrench: Wrench,
 };
 
+// Giới hạn phía trình duyệt chỉ để báo sớm cho người dùng; server mới là nơi kiểm tra chính thức.
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
 const MAX_IMAGE_MB = 5;
 const MAX_VIDEO_MB = 30;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
-const TOTAL_STEPS = 4; 
+const TOTAL_STEPS = 4; // SRS mục 4: tạo yêu cầu không quá 5 bước
 const STEP_LABELS = ['Dịch vụ', 'Sự cố', 'Địa chỉ', 'Xác nhận'];
 
 const EMPTY_FORM = {
@@ -43,13 +44,14 @@ export default function CreateRequestPage() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(EMPTY_FORM);
     const [categories, setCategories] = useState([]);
-    const [catState, setCatState] = useState('loading'); 
+    const [catState, setCatState] = useState('loading'); // loading | ready | error
     const [media, setMedia] = useState([]);
     const [mediaError, setMediaError] = useState('');
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
 
+    // Gợi ý của AI ở bước Sự cố: null | {categoryId, categoryName, confidence, summary, reason}
     const [aiResult, setAiResult] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState('');
@@ -119,9 +121,10 @@ export default function CreateRequestPage() {
         };
     }, []);
 
+    // Giải phóng các URL xem trước khi rời trang
     useEffect(() => () => mediaRef.current.forEach((m) => URL.revokeObjectURL(m.url)), []);
 
-    
+    // Người dùng đang sửa dữ liệu thì xoá thông báo lỗi cũ, tránh hiện lỗi đã hết đúng
     const setField = (name, value) => {
         setForm((f) => ({...f, [name]: value}));
         setError('');
@@ -175,7 +178,7 @@ export default function CreateRequestPage() {
         setMediaError('');
     }
 
-    
+    // AI đọc mô tả + ảnh (không đọc video) rồi gợi ý loại sửa chữa; khách vẫn là người quyết định
     async function analyzeWithAi() {
         const images = media.filter((m) => !m.isVideo).map((m) => m.file);
         if (form.description.trim().length < 5 && images.length === 0) {
@@ -236,7 +239,7 @@ export default function CreateRequestPage() {
         setSubmitting(true);
         setError('');
         try {
-            
+            // Tên field phải khớp CreateRepairRequest của BE (tiếng Anh)
             const data = {
                 categoryId: form.categoryId,
                 description: form.description.trim(),
@@ -306,7 +309,7 @@ export default function CreateRequestPage() {
 
     const [locating, setLocating] = useState(false);
 
-    
+    // Dùng GPS: lấy tọa độ hiện tại, đổi ngược ra địa chỉ chữ để khách kiểm tra lại
     async function useMyLocation() {
         setLocating(true);
         setError('');
@@ -631,7 +634,7 @@ export default function CreateRequestPage() {
                                                                         setSuggestions([]);
                                                                         setShowSuggestions(false);
 
-                                                                        
+                                                                        // Chọn xong thì thu danh sách
                                                                         setShowOtherAddresses(false);
                                                                     }}
                                                                 >

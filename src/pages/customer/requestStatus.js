@@ -1,5 +1,5 @@
-
-
+// Dùng chung cho trang danh sách và trang theo dõi yêu cầu của khách.
+// Key trạng thái chính là giá trị RepairStatus của BE.
 
 export const STAGES = ['PENDING_MATCH', 'MATCHED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED'];
 
@@ -25,17 +25,17 @@ export const BADGE_TONE = {
     CANCELLED: 'bad',
 };
 
-
+// Trạng thái đã kết thúc: không cần cập nhật realtime nữa
 export const TERMINAL = ['COMPLETED', 'NOT_FOUND', 'CANCELLED'];
 
-
-
+// Khách được phép huỷ ở các trạng thái này. Khi thợ đã bắt đầu sửa (IN_PROGRESS) thì ẩn nút huỷ
+// (BE hiện vẫn cho huỷ đến trước khi hoàn thành).
 export const CANCELLABLE = ['PENDING_MATCH', 'MATCHING', 'MATCHED', 'ON_THE_WAY'];
 
-
+// Đơn đã có thợ và chưa bị huỷ mới khiếu nại được (khớp điều kiện ở BE: MATCHED, ON_THE_WAY, IN_PROGRESS, COMPLETED)
 export const COMPLAINABLE = ['MATCHED', 'ON_THE_WAY', 'IN_PROGRESS', 'COMPLETED'];
 
-
+// Nhóm lọc ở trang "Yêu cầu của tôi". statuses là giá trị RepairStatus của BE (rỗng = tất cả).
 export const REQUEST_FILTERS = [
     {key: 'all', label: 'Tất cả', statuses: []},
     {key: 'active', label: 'Đang xử lý', statuses: ['PENDING_MATCH', 'MATCHING', 'MATCHED', 'ON_THE_WAY', 'IN_PROGRESS']},

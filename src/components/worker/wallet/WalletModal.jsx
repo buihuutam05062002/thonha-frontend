@@ -8,6 +8,7 @@ import { formatDateTime, formatSignedVnd, formatVnd } from "../../../utils/forma
 const ACCENT = "#F5820D";
 const PAGE_SIZE = 15;
 
+/** Ví của thợ: số dư, trạng thái nhận đơn và lịch sử giao dịch (mới nhất trước, bấm để xem thêm). */
 export function WalletModal({ onClose }) {
   const [wallet, setWallet] = useState(null);
   const [txns, setTxns] = useState([]);
@@ -24,6 +25,7 @@ export function WalletModal({ onClose }) {
     try {
       const w = await getMyWallet();
       setWallet(w);
+      // Thợ chưa có ví (walletId rỗng) thì chưa có giao dịch, và API giao dịch sẽ báo "chưa có ví"
       if (w.walletId == null) {
         setTxns([]);
         setHasMore(false);
@@ -48,6 +50,7 @@ export function WalletModal({ onClose }) {
     setMoreError(null);
     try {
       const res = await getMyWalletTransactions({ page: nextPage, size: PAGE_SIZE });
+      // có giao dịch mới phát sinh trong lúc xem thì các trang bị dịch: loại trùng theo id
       setTxns((cur) => {
         const seen = new Set(cur.map((t) => t.id));
         return [...cur, ...res.content.filter((t) => !seen.has(t.id))];

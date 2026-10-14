@@ -1,6 +1,7 @@
 import axiosClient from "./axiosClient";
 
 /**
+ * Repair Request API
  *
  * Backend endpoints:
  * - POST   /api/v1/repair-requests            (multipart/form-data: part "data" + "files")
@@ -19,6 +20,8 @@ import axiosClient from "./axiosClient";
  *   lng?: number
  * }
  *
+ * Mọi hàm đọc dữ liệu đều trả về object đã qua transformRequest()
+ * (có thêm categoryName, addressText, attachmentUrls cho UI).
  */
 
 const LEGACY_PRIORITY = { NORMAL: "MEDIUM" };
@@ -47,18 +50,20 @@ export async function createRepairRequest(data, files = []) {
 
   const created = await axiosClient.post("/repair-requests", formData, {
     headers: { "Content-Type": "multipart/form-data" },
-    timeout: 120000,
+    timeout: 120000, // upload ảnh/video chậm hơn request thường; timeout ngắn dễ khiến khách bấm gửi lại và tạo yêu cầu trùng
   });
   return transformRequest(created);
 }
 
 /**
+ * Lịch sử yêu cầu của tôi, có phân trang (BE: GET /repair-requests/my).
  * @param {string[]} [statuses] giá trị RepairStatus của BE; rỗng = tất cả
  * @param {string} [keyword]    tìm theo mã đơn
  * @returns {Promise<{content: object[], totalPages: number, totalElements: number}>}
  */
 export async function searchMyRepairRequests({ statuses = [], keyword = "", page = 0, size = 10 } = {}) {
   const res = await axiosClient.get("/repair-requests/my", {
+    // Gửi dạng "A,B" vì axios mặc định gửi mảng là status[]=A, Spring không đọc được
     params: { status: statuses.length ? statuses.join(",") : undefined, keyword: keyword || undefined, page, size },
   });
   return {
@@ -87,6 +92,7 @@ export async function getWorkerLocation(id) {
   return (await axiosClient.get(`/repair-requests/${id}/worker-location`)) ?? null;
 }
 
+/** RepairRequestResponse (BE) -> object dùng cho UI */
 export function transformRequest(request) {
   if (!request) return request;
   return {

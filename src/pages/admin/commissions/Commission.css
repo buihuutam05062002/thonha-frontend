@@ -13,6 +13,7 @@
 .cm-count { margin: 10px 0 0; font-size: 12px; color: #888; text-align: right; }
 .cm-skeleton { height: 140px; border-radius: 16px; background: linear-gradient(90deg, #f6eeee 25%, #fbf6f6 50%, #f6eeee 75%); background-size: 200% 100%; animation: wa-shimmer 1.2s infinite; }
 
+/* ---------- bộ lọc ngày ---------- */
 .cm-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .cm-pill { border: 0; background: #f6eeee; border-radius: 999px; padding: 6px 14px; font-size: 12.5px; cursor: pointer; }
 .cm-pill:hover { background: #ecd9db; }
@@ -21,6 +22,7 @@
 .cm-range label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #777; }
 .cm-range input[type="date"] { height: 32px; border: 1px solid #d9d2d2; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 13px; color: #222; background: #fff; }
 
+/* ---------- thẻ tổng hợp ---------- */
 .cm-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .cm-stats.is-loading { opacity: .55; }
 .cm-stat { background: #fff; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -31,6 +33,7 @@
 .cm-stat-hl span, .cm-stat-hl small { color: rgba(255, 255, 255, .85); }
 .cm-stat-hl strong { color: #fff; }
 
+/* ---------- bảng ---------- */
 .cm-table-wrap { overflow-x: auto; }
 .cm-table-wrap.is-loading { opacity: .6; }
 .cm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -45,6 +48,7 @@
 .cm-row-off td { opacity: .55; }
 .cm-row-off td:last-child, .cm-row-off td:nth-child(3) { opacity: 1; }
 
+/* ---------- cấu hình tỷ lệ ---------- */
 .cm-default { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .cm-default > div:first-child { flex: 1 1 260px; }
 .cm-default .cm-error { flex-basis: 100%; margin-top: 0; }

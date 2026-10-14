@@ -7,7 +7,7 @@ import {
   Navbar,
   Nav,
 } from "react-bootstrap";
-import logoImg from "../../assets/logo.png"; 
+import logoImg from "../../assets/logo.png"; // Điều chỉnh path logo của bạn
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { ArrowRight, DollarSign, Clock, MapPin, Shield } from "lucide-react";

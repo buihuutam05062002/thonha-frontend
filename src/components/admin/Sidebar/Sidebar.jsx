@@ -12,7 +12,8 @@ import "./Sidebar.css";
 
 import logo from "../../../assets/logo.jpg";
 
-
+// `soon: true` = trang chưa được xây dựng: hiển thị mờ, không bấm được (tránh dẫn tới trang trống).
+// Khi làm xong trang nào thì thêm <Route> trong AdminArea.jsx và bỏ `soon` ở đây.
 const MENU = [
   { label: "Duyệt hồ sơ", to: "/admin/profiles", icon: FileCheck },
   { label: "Người dùng", to: "/admin/users", icon: Users },
@@ -33,16 +34,18 @@ export default function Sidebar({ user = { name: "Admin", role: "Admin", avatar:
   const { user: authUser, logout } = useAuth();
   const adminId = authUser?.id;
 
-
+  // Số khiếu nại chờ xử lý hiện trên menu. Sidebar là nơi duy nhất giữ kết nối WebSocket của admin cho kênh
+  // khiếu nại; có tin mới thì phát sự kiện "complaints:changed" để trang Khiếu nại (nếu đang mở) tự tải lại.
   const [pendingComplaints, setPendingComplaints] = useState(0);
   const refreshPending = () => {
     fetchComplaintStats()
       .then((s) => setPendingComplaints(s.PENDING ?? 0))
-      .catch(() => { /* */ });
+      .catch(() => { /* số đếm chỉ để tham khảo, lỗi thì giữ số cũ */ });
   };
 
   useEffect(() => {
     refreshPending();
+    // trang Khiếu nại vừa tải số liệu mới (sau khi nhận xử lý / kết luận) -> dùng luôn, không gọi lại API
     const onStats = (e) => setPendingComplaints(e.detail?.PENDING ?? 0);
     window.addEventListener("complaints:stats", onStats);
     return () => window.removeEventListener("complaints:stats", onStats);
@@ -59,7 +62,7 @@ export default function Sidebar({ user = { name: "Admin", role: "Admin", avatar:
   }, [query]);
 
   const handleLogout = async () => {
-    await logout(); 
+    await logout(); // gọi API thu hồi refresh token rồi xoá phiên cục bộ
     navigate("/auth", { replace: true });
   };
 

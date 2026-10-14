@@ -18,6 +18,7 @@ export const USER_STATUSES = [
 const toViewModel = (u) => ({ ...u, name: u.fullName, userStatus: u.status });
 
 export async function fetchUsers({ keyword, role, userStatus, page = 0, size = 20 }) {
+  // Lọc + phân trang phía server. Endpoint trả thẳng Page (không bọc ApiResponse).
   const params = { page, size, sort: "id,desc" };
   if (keyword?.trim()) params.keyword = keyword.trim();
   if (role) params.role = role;

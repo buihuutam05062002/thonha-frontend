@@ -9,7 +9,8 @@ import ConfirmProvider from "./components/ui/confirm/ConfirmProvider.jsx";
 function AuthRoute() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
-
+  // Đã đăng nhập (kể cả vừa đăng nhập xong) -> về trang đang định vào, mặc định là trang chủ.
+  // Landing ở "/" tự chuyển ADMIN về /admin và thợ về /worker.
   if (isAuthenticated) {
     const from = location.state?.from;
     const target = from ? `${from.pathname}${from.search ?? ""}${from.hash ?? ""}` : "/";
@@ -19,6 +20,7 @@ function AuthRoute() {
 }
 
 export default function App() {
+
   return (
     <ConfirmProvider>
       <BrowserRouter>

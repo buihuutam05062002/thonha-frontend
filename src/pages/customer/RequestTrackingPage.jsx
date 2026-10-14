@@ -20,7 +20,7 @@ import {
 } from './requestStatus';
 import {formatDateTime} from '../../utils/format';
 
-
+// Chỉ dùng khi WebSocket không kết nối được (mạng yếu, server restart...)
 const FALLBACK_POLL_MS = 8000;
 
 export default function RequestTrackingPage({requestId, onBack, onCreateAnother, onViewAll}) {
@@ -43,7 +43,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         }
     }, [requestId]);
 
-    
+    // tải lần đầu
     useEffect(() => {
         load();
     }, [load]);
@@ -51,7 +51,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const live = !!request && !TERMINAL.includes(request.status);
     const tracking = request?.status === 'ON_THE_WAY' && request.lat != null && request.lng != null;
 
-    
+    // Thợ đang di chuyển: lấy vị trí gần nhất ngay (khách mở/tải lại trang giữa chừng vẫn thấy thợ)
     const loadWorkerLocation = useCallback(async () => {
         try {
             setWorkerLoc(await getWorkerLocation(requestId));
@@ -64,27 +64,27 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         else setWorkerLoc(null);
     }, [tracking, loadWorkerLocation]);
 
-    
+    // ---- Realtime: BE đẩy sự kiện về /topic/user/{id}/requests, FE chỉ cần tải lại yêu cầu ----
     const handleMessage = useCallback((msg) => {
-        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return; 
-        if (msg?.type === 'WORKER_LOCATION') { 
+        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return; // sự kiện của yêu cầu khác
+        if (msg?.type === 'WORKER_LOCATION') { // vị trí thợ: chỉ cập nhật bản đồ, không cần tải lại yêu cầu
             setWorkerLoc({lat: msg.lat, lng: msg.lng, updatedAt: msg.timestamp});
             return;
         }
         clearTimeout(refreshTimer.current);
-        refreshTimer.current = setTimeout(() => load(false), 300); 
+        refreshTimer.current = setTimeout(() => load(false), 300); // gộp các sự kiện đến liên tiếp
     }, [requestId, load]);
     useEffect(() => () => clearTimeout(refreshTimer.current), []);
 
-    
+    // yêu cầu đã kết thúc thì ngắt kết nối (truyền null)
     const wsConnected = useUserTopics(live ? userId : null, ['requests', 'tracking'], handleMessage);
 
-    
+    // mỗi lần (kết nối lại) thành công: tải lại để bù các sự kiện bị lỡ lúc mất mạng
     useEffect(() => {
         if (wsConnected) load(false);
     }, [wsConnected, load]);
 
-    
+    // quay lại tab thì tải lại
     useEffect(() => {
         const onVisible = () => {
             if (document.visibilityState === 'visible') load(false);
@@ -93,7 +93,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [load]);
 
-    
+    // dự phòng: chỉ polling khi WebSocket đang không kết nối
     useEffect(() => {
         if (!live || wsConnected) return undefined;
         const id = setInterval(() => {
@@ -113,7 +113,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
             setRequest(await cancelRepairRequest(requestId));
         } catch (e) {
             setActionError(e.message);
-            load(false); 
+            load(false); // trạng thái có thể đã đổi (vd: thợ vừa bắt đầu sửa) -> cập nhật lại màn hình
         } finally {
             setCancelling(false);
         }
@@ -146,7 +146,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         );
     }
 
-    
+    // "Đang ghép thợ" nằm cùng chặng với "Chờ ghép thợ" trên timeline
     const stageKey = request.status === 'MATCHING' ? 'PENDING_MATCH' : request.status;
     const stageIndex = STAGES.indexOf(stageKey);
     const isTerminalBad = request.status === 'NOT_FOUND' || request.status === 'CANCELLED';

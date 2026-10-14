@@ -1,7 +1,8 @@
 import axiosClient from "./axiosClient";
 
 /**
- * - GET /api/v1/admin/statistics?from=YYYY-MM-DD&to=YYYY-MM-DD   
+ * Thống kê tổng hợp (quyền ADMIN).
+ * - GET /api/v1/admin/statistics?from=YYYY-MM-DD&to=YYYY-MM-DD   (gồm cả ngày `to`; bỏ trống = 30 ngày gần nhất, tối đa 366 ngày)
  *   -> {
  *        from, to,
  *        users:      { totalCustomers, approvedWorkers, pendingWorkerProfiles, newCustomers, newWorkerProfiles },

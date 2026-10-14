@@ -34,7 +34,7 @@ export default function WorkerApprovalPage() {
   const [detailError, setDetailError] = useState("");
 
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
   const noticeTimer = useRef(null);
 
   const showNotice = (type, text) => {
@@ -54,6 +54,7 @@ export default function WorkerApprovalPage() {
     try {
       const res = await fetchWorkerProfiles({ status, ...filters, page });
       setList(res);
+      // giữ lựa chọn nếu hồ sơ vẫn còn trong trang, nếu không chọn hồ sơ đầu tiên
       setSelectedId((cur) => (res.content.some((p) => p.id === cur) ? cur : res.content[0]?.id ?? null));
     } catch (e) {
       setListError(e.message);
@@ -105,7 +106,7 @@ export default function WorkerApprovalPage() {
       return true;
     } catch (e) {
       showNotice("error", e.message);
-      loadList(); loadStats(); 
+      loadList(); loadStats(); // hồ sơ có thể đã được admin khác xử lý
       return false;
     } finally {
       setBusy(false);

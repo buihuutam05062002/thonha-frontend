@@ -1,13 +1,17 @@
 import axiosClient from "./axiosClient";
 
 /**
+ * Thu nhập, lịch sử công việc và đánh giá của thợ.
  *
  * Backend endpoints (quyền WORKER):
- * - GET /api/v1/worker/income?from=YYYY-MM-DD&to=YYYY-MM-DD  
- * - GET /api/v1/worker/requests?status=A,B&keyword=&page=&size=    
+ * - GET /api/v1/worker/income?from=YYYY-MM-DD&to=YYYY-MM-DD   (gồm cả ngày `to`, tối đa 366 ngày)
+ *     -> { from, to, summary: { orders, grossAmount, commissionAmount, workerAmount },
+ *          daily: [{ date, grossAmount, commissionAmount, workerAmount, orders }] }
+ * - GET /api/v1/worker/requests?status=A,B&keyword=&page=&size=      -> Page<đơn>
  *     (chi tiết một đơn: workerApi.getWorkerRequestDetail)
- * - GET /api/v1/worker/reviews?page=&size=                           
+ * - GET /api/v1/worker/reviews?page=&size=                            -> Page<nhận xét>
  * - GET /api/v1/worker/reviews/summary
+ *     -> { averageRating (null nếu chưa có), totalReviews, distribution: { "5": n, ..., "1": n } }
  */
 
 export const getWorkerIncome = ({ from, to } = {}) =>

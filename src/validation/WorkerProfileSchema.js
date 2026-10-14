@@ -11,4 +11,8 @@ export const workerProfileSchema = Yup.object().shape({
   categoryIds: Yup.array()
     .of(Yup.number())
     .min(1, "Vui lòng chọn ít nhất 1 chuyên môn/ngành nghề"),
+  // agreePolicy: Yup.boolean().oneOf(
+  //   [true],
+  //   "Bạn cần đồng ý với chính sách bảo vệ dữ liệu",
+  // ),
 });

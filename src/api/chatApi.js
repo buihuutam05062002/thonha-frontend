@@ -4,11 +4,13 @@ import axiosClient from "./axiosClient";
  * Chat khách <-> thợ
  *
  * Backend endpoints:
- * - GET   /api/v1/chats/by-request/{requestId}          
- * - GET   /api/v1/chats/{chatId}/messages?beforeId&size  
- * - POST  /api/v1/chats/{chatId}/messages             
- * - PATCH /api/v1/chats/{chatId}/seen              
+ * - GET   /api/v1/chats/by-request/{requestId}          lấy (hoặc tạo) cuộc chat của yêu cầu
+ * - GET   /api/v1/chats/{chatId}/messages?beforeId&size  lịch sử (cũ -> mới)
+ * - POST  /api/v1/chats/{chatId}/messages               multipart: content + files (chỉ ảnh)
+ * - PATCH /api/v1/chats/{chatId}/seen                   đánh dấu đã xem
  *
+ * Tin mới của người kia được đẩy realtime qua STOMP: /topic/user/{id}/chat
+ *   { type: "NEW_MESSAGE" | "MESSAGES_SEEN", chatId, requestId, message? }
  */
 
 export const CHAT_PAGE_SIZE = 30;

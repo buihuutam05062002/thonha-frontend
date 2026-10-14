@@ -2,6 +2,7 @@ import { Button } from "react-bootstrap";
 import { OrderCard } from "./OrderCard";
 import { NEXT_STEP } from "./orderFlow";
 
+/** Đơn đang thực hiện: bấm vào xem chi tiết, nút bên dưới mở chi tiết để chuyển bước. */
 export function ActiveOrders({ orders, onSelect }) {
   if (!orders?.length) return null;
   return (

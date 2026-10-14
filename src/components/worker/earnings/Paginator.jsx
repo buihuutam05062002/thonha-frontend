@@ -1,5 +1,6 @@
 import { Pagination } from "react-bootstrap";
 
+/** Trang hiển thị: luôn có trang đầu, trang cuối và các trang quanh trang hiện tại ("gap" = dấu ...). page bắt đầu từ 0. */
 export function pageItems(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i);
   const set = new Set([0, total - 1, current - 1, current, current + 1]);

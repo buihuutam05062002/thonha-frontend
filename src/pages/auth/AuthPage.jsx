@@ -24,7 +24,7 @@ export default function AuthPage({onAuthenticated}) {
                 ? {account: form.account, password: form.password}
                 : {fullName: form.fullName, email: form.email, phoneNumber: form.phoneNumber, password: form.password};
             const res = mode === 'login' ? await login(data) : await register(data);
-            saveSession(res); 
+            saveSession(res); // phiên đổi -> AuthRoute tự chuyển hướng
             onAuthenticated?.(res.user);
         } catch (err) {
             setError(err.message);

@@ -16,6 +16,7 @@ const MAX_IMAGES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+// Thợ khiếu nại khách: chỉ các lý do phù hợp (các lý do còn lại nói về chất lượng/thái độ của thợ)
 const REASONS_BY_ROLE = {
     customer: Object.keys(COMPLAINT_REASON_LABELS),
     worker: ['RUDE_BEHAVIOR', 'OTHER'],
@@ -30,7 +31,13 @@ const TONE = {
 
 const OPEN = ['PENDING', 'PROCESSING'];
 
-
+/**
+ * Khiếu nại cho một đơn, dùng cho cả khách (role = "customer") và thợ (role = "worker").
+ * Hiện các khiếu nại mình đã gửi cho đơn này (kèm kết luận của admin) và form gửi khiếu nại mới.
+ * Mỗi người chỉ có 1 khiếu nại đang mở trên 1 đơn, nên đang có khiếu nại mở thì ẩn nút gửi thêm.
+ * Tiến trình xử lý cập nhật realtime qua /topic/user/{id}/complaints. Component cha quyết định khi nào hiển thị
+ * (đơn đã có thợ và chưa bị huỷ).
+ */
 export default function ComplaintPanel({requestId, role}) {
     const userId = useAuth().user?.id;
     const reasons = REASONS_BY_ROLE[role] ?? REASONS_BY_ROLE.customer;
@@ -62,6 +69,7 @@ export default function ComplaintPanel({requestId, role}) {
         load();
     }, [load]);
 
+    // admin nhận xử lý / kết luận -> cập nhật ngay
     useUserTopics(userId, ['complaints'], (msg) => {
         if (Number(msg?.requestId) === Number(requestId)) load();
     });
@@ -115,7 +123,7 @@ export default function ComplaintPanel({requestId, role}) {
             await load();
         } catch (err) {
             setError(err.message);
-            load(); 
+            load(); // có thể đã gửi ở tab khác
         } finally {
             setBusy(false);
         }

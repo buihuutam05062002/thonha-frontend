@@ -27,6 +27,7 @@ function Party({ title, party, tag }) {
   );
 }
 
+/** Form kết luận: chọn giải quyết / từ chối + nội dung, có hộp xác nhận vì đóng rồi không sửa được. */
 function ResolveForm({ onSubmit, onClose }) {
   const [status, setStatus] = useState("RESOLVED");
   const [resolution, setResolution] = useState("");
@@ -114,6 +115,7 @@ function ResolveForm({ onSubmit, onClose }) {
   );
 }
 
+/** Chi tiết một khiếu nại. Mount lại (key) khi đổi khiếu nại để đóng form đang mở. */
 export default function ComplaintDetail({ data, loading, error, onTake, onResolve }) {
   const [resolving, setResolving] = useState(false);
   const [confirmTake, setConfirmTake] = useState(false);

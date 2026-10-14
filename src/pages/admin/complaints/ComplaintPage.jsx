@@ -7,9 +7,9 @@ import {
 import { formatRelative } from "../../../utils/format";
 import Pagination from "../user-management/Pagination";
 import ComplaintDetail, { STATUS_CLASS } from "./ComplaintDetail";
-import "../user-management/UserManagement.css"; 
-import "../worker-approval/WorkerApprovalPage.css"; 
-import "../wallets/WalletManagement.css";
+import "../user-management/UserManagement.css"; // style phân trang dùng chung
+import "../worker-approval/WorkerApprovalPage.css"; // bố cục danh sách + chi tiết, hộp thoại dùng chung
+import "../wallets/WalletManagement.css"; // ô nhập (wl-input) dùng chung
 import "./Complaint.css";
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
@@ -39,8 +39,8 @@ export default function ComplaintPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
 
-  const [reloadKey, setReloadKey] = useState(0); 
-  const [notice, setNotice] = useState(null); 
+  const [reloadKey, setReloadKey] = useState(0); // tăng lên để tải lại danh sách, số đếm và chi tiết sau khi xử lý
+  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
   const noticeTimer = useRef(null);
 
   const showNotice = useCallback((type, text) => {
@@ -52,6 +52,7 @@ export default function ComplaintPage() {
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
+  // Sidebar nhận tin WebSocket (khiếu nại mới...) và phát lại sự kiện này -> tải lại danh sách + số đếm
   useEffect(() => {
     const onChanged = (e) => {
       if (e.detail?.type === "COMPLAINT_CREATED") showNotice("success", e.detail.message || "Có khiếu nại mới.");
@@ -61,6 +62,7 @@ export default function ComplaintPage() {
     return () => window.removeEventListener("complaints:changed", onChanged);
   }, [showNotice, reload]);
 
+  // danh sách
   useEffect(() => {
     let cancelled = false;
     setListLoading(true);
@@ -72,6 +74,7 @@ export default function ComplaintPage() {
     return () => { cancelled = true; };
   }, [status, filters, page, reloadKey]);
 
+  // số đếm trên các tab
   useEffect(() => {
     let cancelled = false;
     fetchComplaintStats()
@@ -79,12 +82,15 @@ export default function ComplaintPage() {
         if (cancelled) return;
         const next = { ...EMPTY_STATS, ...res };
         setStats(next);
+        // cho Sidebar cập nhật huy hiệu số chờ xử lý mà không phải gọi lại API
         window.dispatchEvent(new CustomEvent("complaints:stats", { detail: next }));
       })
-      .catch(() => { /* */ });
+      .catch(() => { /* số đếm chỉ để tham khảo, lỗi thì giữ số cũ */ });
     return () => { cancelled = true; };
   }, [reloadKey]);
 
+  // chưa chọn gì (mới vào, đổi tab, đổi trang) -> chọn khiếu nại đầu tiên.
+  // Sau khi xử lý, khiếu nại có thể rời khỏi tab hiện tại nhưng vẫn giữ chọn để admin xem kết quả.
   useEffect(() => {
     if (selectedId == null && list.content.length > 0) setSelectedId(list.content[0].id);
   }, [list, selectedId]);
@@ -105,7 +111,7 @@ export default function ComplaintPage() {
   const resetSelection = () => {
     setSelectedId(null);
     setDetail(null);
-    setList(EMPTY_PAGE); 
+    setList(EMPTY_PAGE); // tránh tự chọn nhầm khiếu nại của danh sách cũ
   };
 
   const changeStatus = (value) => {
@@ -135,11 +141,12 @@ export default function ComplaintPage() {
     setFilters({ keyword: "", reason: "" });
   };
 
+  // Các hàm dưới ném lỗi lên khung chi tiết để hiển thị ngay tại đó
   const handleTake = async () => {
     try {
       await takeComplaint(selectedId);
     } catch (e) {
-      reload(); 
+      reload(); // vd: admin khác vừa nhận -> cập nhật lại trạng thái đang hiển thị
       throw e;
     }
     showNotice("success", `Đã nhận xử lý khiếu nại #${selectedId}.`);

@@ -6,7 +6,8 @@ import { IconWallet } from "../../icon/Index";
 import { formatVnd } from "../../../utils/format";
 
 /**
-
+ * Thẻ số dư ví trên bảng điều khiển. `refreshKey` đổi (vd: dashboard vừa tải lại sau khi hoàn thành đơn)
+ * thì tải lại số dư để thợ thấy hoa hồng vừa bị trừ.
  */
 export function WalletCard({ refreshKey, onOpen }) {
   const [wallet, setWallet] = useState(null);
@@ -21,6 +22,7 @@ export function WalletCard({ refreshKey, onOpen }) {
     return () => { cancelled = true; };
   }, [refreshKey, retry]);
 
+  // lỗi mạng thoáng qua khi đã có số dư cũ thì giữ số dư cũ, không làm phiền thợ
   if (failed && !wallet) {
     return (
       <Card className="border-0 shadow-sm rounded-4 mb-4">

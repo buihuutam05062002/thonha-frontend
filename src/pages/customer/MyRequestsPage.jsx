@@ -45,18 +45,18 @@ export default function MyRequestsPage() {
     const nav = useNavigate();
     const [filterKey, setFilterKey] = useState('all');
     const [keywordInput, setKeywordInput] = useState('');
-    const [keyword, setKeyword] = useState(''); 
+    const [keyword, setKeyword] = useState(''); // đã debounce, dùng để gọi API
     const [page, setPage] = useState(0);
 
-    const [data, setData] = useState(null); 
+    const [data, setData] = useState(null); // {content, totalPages, totalElements}
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     const refreshTimer = useRef(null);
-    const requestSeq = useRef(0); 
+    const requestSeq = useRef(0); // bỏ qua kết quả của lần gọi cũ khi người dùng đã đổi bộ lọc
     const userId = useAuth().user?.id;
 
-    
+    // Gõ xong mới tìm, và về trang đầu
     useEffect(() => {
         const id = setTimeout(() => {
             setKeyword(keywordInput.trim());
@@ -72,7 +72,7 @@ export default function MyRequestsPage() {
             const res = await searchMyRepairRequests({statuses, keyword, page, size: PAGE_SIZE});
             if (seq !== requestSeq.current) return;
             if (res.content.length === 0 && page > 0 && res.totalPages > 0) {
-                setPage(res.totalPages - 1); 
+                setPage(res.totalPages - 1); // trang hiện tại không còn dữ liệu (vd đơn đổi trạng thái khỏi bộ lọc)
                 return;
             }
             setData(res);
@@ -89,7 +89,7 @@ export default function MyRequestsPage() {
         load();
     }, [load]);
 
-    
+    // Realtime: có sự kiện của bất kỳ yêu cầu nào thì tải lại trang hiện tại
     const handleMessage = useCallback(() => {
         clearTimeout(refreshTimer.current);
         refreshTimer.current = setTimeout(() => load(false), 300);
@@ -98,7 +98,7 @@ export default function MyRequestsPage() {
     const wsConnected = useUserTopics(userId, ['requests'], handleMessage);
 
     useEffect(() => {
-        if (wsConnected) load(false); 
+        if (wsConnected) load(false); // bù sự kiện bị lỡ khi mất kết nối
     }, [wsConnected, load]);
 
     useEffect(() => {
@@ -109,7 +109,7 @@ export default function MyRequestsPage() {
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [load]);
 
-    
+    // dự phòng khi WebSocket không kết nối được
     useEffect(() => {
         if (wsConnected) return undefined;
         const id = setInterval(() => {

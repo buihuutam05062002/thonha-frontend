@@ -7,6 +7,7 @@ const QUICK_AMOUNTS = [100000, 200000, 500000, 1000000];
 const REASON_MAX = 500;
 const REF_MAX = 60;
 
+/** Hộp xác nhận cho thao tác tiền: hiển thị rõ số tiền và số dư sau khi thực hiện. */
 export function ConfirmDialog({ title, lines, confirmLabel, danger, busy, onConfirm, onCancel }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape" && !busy) onCancel(); };
@@ -34,6 +35,7 @@ export function ConfirmDialog({ title, lines, confirmLabel, danger, busy, onConf
   );
 }
 
+/** Nạp tiền: thợ đã nộp tiền hoa hồng cho công ty. Mã tham chiếu giúp chống ghi nhận trùng. */
 export function TopUpForm({ wallet, onSubmit, onClose }) {
   const [amount, setAmount] = useState(0);
   const [referenceCode, setReferenceCode] = useState("");
@@ -114,6 +116,7 @@ export function TopUpForm({ wallet, onSubmit, onClose }) {
   );
 }
 
+/** Điều chỉnh tăng/giảm để sửa sai sót. Bắt buộc có lý do, được lưu vào sổ cái. */
 export function AdjustForm({ wallet, onSubmit, onClose }) {
   const [type, setType] = useState("ADJUSTMENT_CREDIT");
   const [amount, setAmount] = useState(0);

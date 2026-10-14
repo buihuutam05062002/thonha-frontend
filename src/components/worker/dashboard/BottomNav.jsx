@@ -2,6 +2,7 @@ import { TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { IconHome, IconOrders, IconNotif, IconUser } from "../../icon/Index";
 
+/** current: mục đang mở ("home" | "orders" | "earnings"). */
 export function BottomNav({ pendingCount = 0, onOpenNotif, current = "home" }) {
   const navigate = useNavigate();
   const items = [

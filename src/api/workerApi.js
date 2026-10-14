@@ -1,6 +1,9 @@
 import axiosClient from "./axiosClient";
 
 /**
+ * Worker Profile API
+ * 
+ * Backend endpoints:
  * - POST   /api/v1/worker/profile (multipart/form-data)
  * - GET    /api/v1/worker/profile
  * - PATCH  /api/v1/worker/availability
@@ -8,9 +11,20 @@ import axiosClient from "./axiosClient";
  * - PUT    /api/v1/worker/profile (nộp lại hồ sơ bị từ chối)
  * - GET    /api/v1/worker/requests/{id}
  * - PATCH  /api/v1/worker/requests/{id}/status
+ * 
+ * Register payload (data part):
+ * {
+ *   provinceCity: string,
+ *   operatingArea: string,
+ *   experienceYears: number,
+ *   categoryIds: number[],
+ *   agreePolicy: boolean
+ * }
+ * Files: cccdFront, cccdBack, certificates[], degrees[]
  */
 
 /**
+ * Register worker profile
  * @param {Object} data - Worker profile data
  * @param {string} data.provinceCity - Province/City
  * @param {string} data.operatingArea - Operating area
@@ -56,8 +70,9 @@ export async function registerWorkerProfile(data, files) {
 }
 
 /**
- * @param {Object} data 
- * @param {Object} [files] 
+ * Nộp lại hồ sơ đã bị từ chối. Giấy tờ không chọn lại thì BE giữ bản cũ.
+ * @param {Object} data - giống registerWorkerProfile
+ * @param {Object} [files] - cccdFront?, cccdBack?, certificates?, degrees?
  */
 export async function resubmitWorkerProfile(data, files = {}) {
   const formData = new FormData();
@@ -80,7 +95,8 @@ export async function resubmitWorkerProfile(data, files = {}) {
 }
 
 /**
- * @returns {Promise<Object|null>}
+ * Get current user's worker profile
+ * @returns {Promise<Object|null>} Worker profile or null if not found
  */
 export async function getMyWorkerProfile() {
   try {
@@ -94,14 +110,17 @@ export async function getMyWorkerProfile() {
 }
 
 /**
- * @param {boolean} available 
- * @returns {Promise<Object>} 
+ * Update worker availability status
+ * @param {boolean} available - True for online/ready, false for offline
+ * @returns {Promise<Object>} Updated worker profile
  */
 export async function updateWorkerAvailability(available) {
   return axiosClient.patch("/worker/availability", { available });
 }
 
 /**
+ * Gửi vị trí GPS hiện tại của thợ (backend lưu vào Redis để ghép thợ theo khoảng cách).
+ * Chỉ có tác dụng khi thợ đang ở trạng thái sẵn sàng.
  * @param {number} lat
  * @param {number} lng
  */
@@ -110,6 +129,7 @@ export async function updateWorkerLocation(lat, lng) {
 }
 
 /**
+ * Dữ liệu tổng hợp cho dashboard: thống kê, yêu cầu đang chờ phản hồi, đơn gần đây, thu nhập 7 ngày.
  * @returns {Promise<{summary:Object, incomingRequests:Array, recentOrders:Array, weeklyIncome:Array}>}
  */
 export async function getWorkerDashboard() {
@@ -117,6 +137,7 @@ export async function getWorkerDashboard() {
 }
 
 /**
+ * Thợ chấp nhận / từ chối yêu cầu được hệ thống gửi tới.
  * @param {number} requestId
  * @param {number} matchingLogId
  * @param {"ACCEPTED"|"REJECTED"} result
@@ -131,6 +152,7 @@ export async function respondToMatching(requestId, matchingLogId, result, note) 
 }
 
 /**
+ * Chi tiết yêu cầu mà thợ đang/đã phụ trách (địa chỉ, mô tả, ảnh đính kèm...).
  * @param {number} requestId
  */
 export async function getWorkerRequestDetail(requestId) {
@@ -138,9 +160,10 @@ export async function getWorkerRequestDetail(requestId) {
 }
 
 /**
+ * Thợ chuyển trạng thái đơn sang bước kế tiếp.
  * @param {number} requestId
  * @param {"ON_THE_WAY"|"IN_PROGRESS"|"COMPLETED"} status
- * @param {number} [finalPrice]
+ * @param {number} [finalPrice] giá thực tế, chỉ dùng khi COMPLETED
  */
 export async function updateRequestStatus(requestId, status, finalPrice) {
   const body = { status };
@@ -150,4 +173,5 @@ export async function updateRequestStatus(requestId, status, finalPrice) {
   return axiosClient.patch(`/worker/requests/${requestId}/status`, body);
 }
 
+// Alias for backward compatibility
 export const registerWorker = registerWorkerProfile;

@@ -12,8 +12,8 @@ const EMPTY_FILTERS = { keyword: "", role: "", userStatus: "" };
 
 export default function UserManagement({ onView }) {
   const confirm = useConfirm();
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [applied, setApplied] = useState(EMPTY_FILTERS);
+  const [filters, setFilters] = useState(EMPTY_FILTERS); // giá trị đang nhập
+  const [applied, setApplied] = useState(EMPTY_FILTERS); // giá trị đã bấm Tìm kiếm
   const [page, setPage] = useState(0);
   const [data, setData] = useState({ content: [], totalPages: 0 });
   const [loading, setLoading] = useState(false);

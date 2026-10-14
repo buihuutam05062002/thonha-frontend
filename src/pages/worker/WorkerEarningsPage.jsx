@@ -18,6 +18,7 @@ const TABS = [
   { key: "reviews", label: "Đánh giá", Component: ReviewsTab },
 ];
 
+/** Trang "Thu nhập & đánh giá" của thợ: 3 tab, tab đang mở nằm trên URL (?tab=income|history|reviews). */
 export default function WorkerEarningsPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -28,7 +29,7 @@ export default function WorkerEarningsPage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  
+  // Tab nào đã mở rồi thì giữ nguyên (bộ lọc, trang đang xem), chỉ ẩn đi khi chuyển tab.
   const [visited, setVisited] = useState(() => new Set([tab]));
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function WorkerEarningsPage() {
       .then((data) => {
         if (cancelled) return;
         if (!data) navigate("/worker/register", { replace: true });
-        
+        // chưa được duyệt: trang chủ thợ hiển thị đúng màn hình chờ duyệt / nộp lại hồ sơ
         else if (data.approvalStatus !== "APPROVED") navigate("/worker/dashboard", { replace: true });
         else setProfile(data);
       })
@@ -73,7 +74,7 @@ export default function WorkerEarningsPage() {
     specialty: profile.specialties?.map((s) => s.name).join(", "),
   };
   const current = tab === "history" ? "orders" : "earnings";
-  const goHome = () => navigate("/worker/dashboard"); 
+  const goHome = () => navigate("/worker/dashboard"); // thông báo realtime nằm ở trang chủ thợ
 
   return (
     <div className="d-flex min-vh-100 bg-light">

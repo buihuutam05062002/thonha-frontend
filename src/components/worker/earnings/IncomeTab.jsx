@@ -36,9 +36,10 @@ function Metric({ label, value, hint, tone }) {
   );
 }
 
+/** Tab "Thu nhập": chọn tuần / tháng / khoảng ngày; tổng doanh thu, hoa hồng đã trừ, thực nhận, số đơn và biểu đồ theo ngày. */
 export function IncomeTab({ active }) {
   const [kind, setKind] = useState("week");
-  const [offset, setOffset] = useState(0); 
+  const [offset, setOffset] = useState(0); // 0 = tuần/tháng hiện tại, -1 = kỳ trước...
   const [custom, setCustom] = useState(() => {
     const today = new Date();
     return { from: toIsoDate(addDays(today, -6)), to: toIsoDate(today) };
@@ -46,7 +47,7 @@ export function IncomeTab({ active }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const seq = useRef(0); 
+  const seq = useRef(0); // bỏ qua kết quả của lần gọi cũ khi người dùng đã đổi khoảng
 
   const range = useMemo(() => {
     if (kind === "week") return weekRange(new Date(), offset);
@@ -71,6 +72,7 @@ export function IncomeTab({ active }) {
     }
   }, [range]);
 
+  // chỉ tải khi tab đang mở (và tải lại mỗi lần quay lại tab để số liệu không cũ)
   useEffect(() => {
     if (!active || customError) return;
     load();
@@ -83,7 +85,7 @@ export function IncomeTab({ active }) {
 
   const summary = data?.summary;
   const daysWithOrders = (data?.daily ?? []).filter((d) => d.orders > 0);
-  const shown = data && data.from === range.from && data.to === range.to; 
+  const shown = data && data.from === range.from && data.to === range.to; // dữ liệu có khớp khoảng đang chọn không
 
   return (
     <div>

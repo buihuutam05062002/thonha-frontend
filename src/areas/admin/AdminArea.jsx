@@ -20,7 +20,7 @@ export default function AdminArea() {
           <Route path="commissions" element={<CommissionPage />} />
           <Route path="complaints" element={<ComplaintPage />} />
           <Route path="statistics" element={<StatisticsPage />} />
-          {/* Đường dẫn chưa có trang (gõ tay/bookmark cũ)  về trang mặc định  */}
+          {/* Đường dẫn chưa có trang (gõ tay/bookmark cũ) -> về trang mặc định thay vì trang trống */}
           <Route path="*" element={<Navigate to="/admin/profiles" replace />} />
         </Route>
       </Route>

@@ -4,6 +4,7 @@ import { fetchCommissionOverview, saveCommissionPolicy } from "../../../api/comm
 import { getCategories } from "../../../api/categoryApi";
 import { formatDateTime, formatPercent } from "../../../utils/format";
 
+/** Nhận "12.5" hoặc "12,5". Backend: 0..100, tối đa 2 chữ số thập phân. */
 function parseRate(text) {
   const t = String(text ?? "").trim().replace(",", ".");
   if (!/^\d{1,3}(\.\d{1,2})?$/.test(t)) {
@@ -44,6 +45,7 @@ export default function CommissionPolicies() {
 
   useEffect(() => { load(); }, [load]);
 
+  /** Lưu một chính sách; ném lỗi lên để form hiển thị tại chỗ. */
   const save = async (payload, successText) => {
     await saveCommissionPolicy(payload);
     showNotice("success", successText);
@@ -96,6 +98,7 @@ function DefaultRateCard({ overview, onSave }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // đồng bộ lại khi dữ liệu được tải lại từ máy chủ
   useEffect(() => { setText(String(overview.defaultRatePercent)); }, [overview.defaultRatePercent]);
 
   const parsed = parseRate(text);

@@ -1,0 +1,102 @@
+.request-detail-wrapper {
+  min-height: 100vh;
+  background: #f6f7fb;
+}
+
+@media (max-width: 575.98px) {
+  .request-detail-wrapper {
+    padding-bottom: 150px; /* room for the mobile action bar */
+  }
+}
+
+.custom-card {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* Image carousel */
+.img-carousel-container {
+  position: relative;
+  height: 240px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #e9ecef;
+}
+
+@media (min-width: 992px) {
+  .img-carousel-container {
+    height: 320px;
+  }
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  transition: all 0.2s ease;
+}
+
+.carousel-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: #f5820d;
+}
+
+/* AI cards */
+.ai-card-bg {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  box-shadow: inset 0 0 0 1px #fed7aa;
+}
+
+.ai-price-card {
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #f5820d, 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+/* Accept button */
+.btn-accept-main {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: #f5820d;
+  --bs-btn-border-color: #f5820d;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #e0740a;
+  --bs-btn-hover-border-color: #e0740a;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #c9680a;
+  --bs-btn-active-border-color: #c9680a;
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: #f5820d;
+  --bs-btn-disabled-border-color: #f5820d;
+  font-weight: 700;
+}
+
+/* Status / countdown pulse */
+.pulse-badge {
+  animation: pulse-badge 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Mobile floating action bar */
+.mobile-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1030;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 16px rgba(16, 24, 40, 0.08);
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}

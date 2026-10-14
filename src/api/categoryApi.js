@@ -8,10 +8,12 @@ export async function getCategoryById(id) {
   return axiosClient.get(`/service-categories/${id}`);
 }
 
+// Các hàm ghi dưới đây chỉ dành cho ADMIN
 export async function createCategory({ name, description, icon }) {
   return axiosClient.post("/service-categories", { name, description, icon });
 }
 
+// status: ACTIVE | INACTIVE
 export async function updateCategory(id, { name, description, icon, status }) {
   return axiosClient.put(`/service-categories/${id}`, { name, description, icon, status });
 }

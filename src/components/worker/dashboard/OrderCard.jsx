@@ -6,6 +6,7 @@ import { formatDayTime, formatVnd } from "../../../utils/format";
 const STATUS_CONFIG = {
   MATCHED: { bg: "info", text: "info", dot: "#0DCAF0" },
   ON_THE_WAY: { bg: "warning", text: "dark", dot: "#F59E0B" },
+  ARRIVED: { bg: "info", text: "info", dot: "#0DCAF0" },
   IN_PROGRESS: { bg: "warning", text: "dark", dot: "#F5820D" },
   COMPLETED: { bg: "success", text: "success", dot: "#22C55E" },
   CANCELLED: { bg: "secondary", text: "secondary", dot: "#9CA3AF" },

@@ -1,16 +1,19 @@
 import axiosClient from "./axiosClient";
 
 export async function autocompleteAddress(input) {
-  const response = await axiosClient.get(`/maps/autocomplete?input=${encodeURIComponent(input)}`);
+  const response = await axiosClient.get(
+    `/maps/autocomplete?input=${encodeURIComponent(input)}`,
+  );
   return (response.predictions || []).map((p) => ({
     placeId: p.place_id,
     description: p.description,
     chinh: p.structured_formatting?.main_text || p.description,
-    phu: p.structured_formatting?.secondary_text || '',
+    phu: p.structured_formatting?.secondary_text || "",
   }));
 }
 
 /**
+ * Lấy vị trí hiện tại của thiết bị (GPS). Trình duyệt sẽ hỏi quyền; chỉ chạy trên HTTPS hoặc localhost.
  * @returns {Promise<{lat:number,lng:number}>}
  */
 export function getCurrentPosition({ maximumAge = 30000 } = {}) {
@@ -45,7 +48,9 @@ export async function reverseGeocode(lat, lng) {
 }
 
 export async function getPlaceDetail(placeId) {
-  const response = await axiosClient.get(`/maps/place?placeId=${encodeURIComponent(placeId)}`);
+  const response = await axiosClient.get(
+    `/maps/place?placeId=${encodeURIComponent(placeId)}`,
+  );
   const loc = response.result?.geometry?.location;
   return { lat: loc?.lat ?? null, lng: loc?.lng ?? null };
 }

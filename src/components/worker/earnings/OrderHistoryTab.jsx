@@ -11,6 +11,7 @@ const ACCENT = "#F5820D";
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
 
+// statuses là giá trị RepairStatus của BE (rỗng = tất cả)
 const FILTERS = [
   { key: "all", label: "Tất cả", statuses: [] },
   { key: "done", label: "Hoàn thành", statuses: ["COMPLETED"] },
@@ -18,17 +19,19 @@ const FILTERS = [
   { key: "cancelled", label: "Đã hủy", statuses: ["CANCELLED"] },
 ];
 
+/** Tab "Lịch sử công việc": danh sách đơn có phân trang, lọc theo trạng thái, tìm theo mã đơn, bấm để xem chi tiết. */
 export function OrderHistoryTab({ active }) {
   const [filterKey, setFilterKey] = useState("all");
   const [keywordInput, setKeywordInput] = useState("");
-  const [keyword, setKeyword] = useState(""); 
+  const [keyword, setKeyword] = useState(""); // đã debounce, dùng để gọi API
   const [page, setPage] = useState(0);
-  const [data, setData] = useState(null); 
+  const [data, setData] = useState(null); // {content, totalPages, totalElements}
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const seq = useRef(0); 
+  const seq = useRef(0); // bỏ qua kết quả của lần gọi cũ khi người dùng đã đổi bộ lọc
 
+  // Gõ xong mới tìm, và về trang đầu
   useEffect(() => {
     const id = setTimeout(() => {
       setKeyword(keywordInput.trim());
@@ -46,7 +49,7 @@ export function OrderHistoryTab({ active }) {
       const res = await searchWorkerOrders({ statuses, keyword, page, size: PAGE_SIZE });
       if (mine !== seq.current) return;
       if (res.content.length === 0 && page > 0 && res.totalPages > 0) {
-        setPage(res.totalPages - 1); 
+        setPage(res.totalPages - 1); // trang hiện tại không còn dữ liệu (vd đơn đổi trạng thái khỏi bộ lọc)
         return;
       }
       setData(res);
@@ -57,6 +60,7 @@ export function OrderHistoryTab({ active }) {
     }
   }, [filterKey, keyword, page]);
 
+  // chỉ tải khi tab đang mở (và tải lại mỗi lần quay lại tab để danh sách không cũ)
   useEffect(() => {
     if (active) load();
   }, [active, load]);
