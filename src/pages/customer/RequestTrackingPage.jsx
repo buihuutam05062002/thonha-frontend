@@ -4,6 +4,7 @@ import {cancelRepairRequest, getRepairRequestById, getWorkerLocation} from '../.
 import WorkerTrackingMap from '../../components/customer/WorkerTrackingMap';
 import ChatBox from '../../components/chat/ChatBox';
 import QuotationPanel from '../../components/chat/QuotationPanel';
+import PaymentPanel from '../../components/customer/PaymentPanel';
 import ReviewPanel from '../../components/chat/ReviewPanel';
 import ComplaintPanel from '../../components/chat/ComplaintPanel';
 import {useAuth} from '../../auth/useAuth';
@@ -29,21 +30,26 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const [cancelling, setCancelling] = useState(false);
     const [actionError, setActionError] = useState('');
     const [workerLoc, setWorkerLoc] = useState(null);
+    const [acceptedQuotation, setAcceptedQuotation] = useState(null);
+    const [paymentVersion, setPaymentVersion] = useState(0);
     const refreshTimer = useRef(null);
     const userId = useAuth().user?.id;
     const confirm = useConfirm();
 
-    const load = useCallback(async (showError = true) => {
-        try {
-            const data = await getRepairRequestById(requestId);
-            setRequest(data);
-            setError('');
-        } catch (e) {
-            if (showError) setError(e.message);
-        }
+    // Dùng chuỗi .then (không async/await) để setState chỉ nằm trong callback bất đồng bộ —
+    // gọi load() trong effect không vi phạm rule react-hooks/set-state-in-effect.
+    const load = useCallback((showError = true) => {
+        return getRepairRequestById(requestId)
+            .then((data) => {
+                setRequest(data);
+                setError('');
+            })
+            .catch((e) => {
+                if (showError) setError(e.message);
+            });
     }, [requestId]);
 
-    // tải lần đầu
+    
     useEffect(() => {
         load();
     }, [load]);
@@ -51,40 +57,39 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const live = !!request && !TERMINAL.includes(request.status);
     const tracking = request?.status === 'ON_THE_WAY' && request.lat != null && request.lng != null;
 
-    // Thợ đang di chuyển: lấy vị trí gần nhất ngay (khách mở/tải lại trang giữa chừng vẫn thấy thợ)
-    const loadWorkerLocation = useCallback(async () => {
-        try {
-            setWorkerLoc(await getWorkerLocation(requestId));
-        } catch {
-            /* bỏ qua: sẽ nhận vị trí qua WebSocket hoặc lần thử sau */
-        }
+
+    const loadWorkerLocation = useCallback(() => {
+        // bỏ qua lỗi: sẽ nhận vị trí qua WebSocket hoặc lần thử sau
+        return getWorkerLocation(requestId).then(setWorkerLoc).catch(() => {});
     }, [requestId]);
     useEffect(() => {
         if (tracking) loadWorkerLocation();
-        else setWorkerLoc(null);
     }, [tracking, loadWorkerLocation]);
+    // Chỉ hiển thị vị trí thợ khi đang theo dõi (thay cho việc setWorkerLoc(null) trong effect)
+    const shownWorkerLoc = tracking ? workerLoc : null;
 
-    // ---- Realtime: BE đẩy sự kiện về /topic/user/{id}/requests, FE chỉ cần tải lại yêu cầu ----
+    
     const handleMessage = useCallback((msg) => {
-        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return; // sự kiện của yêu cầu khác
-        if (msg?.type === 'WORKER_LOCATION') { // vị trí thợ: chỉ cập nhật bản đồ, không cần tải lại yêu cầu
+        if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return;
+        if (msg?.type === 'WORKER_LOCATION') {
             setWorkerLoc({lat: msg.lat, lng: msg.lng, updatedAt: msg.timestamp});
             return;
         }
+        if (msg?.type === 'PAYMENT_SUCCESS') setPaymentVersion((v) => v + 1);
         clearTimeout(refreshTimer.current);
-        refreshTimer.current = setTimeout(() => load(false), 300); // gộp các sự kiện đến liên tiếp
+        refreshTimer.current = setTimeout(() => load(false), 300);
     }, [requestId, load]);
     useEffect(() => () => clearTimeout(refreshTimer.current), []);
 
-    // yêu cầu đã kết thúc thì ngắt kết nối (truyền null)
+    
     const wsConnected = useUserTopics(live ? userId : null, ['requests', 'tracking'], handleMessage);
 
-    // mỗi lần (kết nối lại) thành công: tải lại để bù các sự kiện bị lỡ lúc mất mạng
+    
     useEffect(() => {
         if (wsConnected) load(false);
     }, [wsConnected, load]);
 
-    // quay lại tab thì tải lại
+    
     useEffect(() => {
         const onVisible = () => {
             if (document.visibilityState === 'visible') load(false);
@@ -93,7 +98,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [load]);
 
-    // dự phòng: chỉ polling khi WebSocket đang không kết nối
+    
     useEffect(() => {
         if (!live || wsConnected) return undefined;
         const id = setInterval(() => {
@@ -113,7 +118,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
             setRequest(await cancelRepairRequest(requestId));
         } catch (e) {
             setActionError(e.message);
-            load(false); // trạng thái có thể đã đổi (vd: thợ vừa bắt đầu sửa) -> cập nhật lại màn hình
+            load(false);
         } finally {
             setCancelling(false);
         }
@@ -146,7 +151,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
         );
     }
 
-    // "Đang ghép thợ" nằm cùng chặng với "Chờ ghép thợ" trên timeline
+    
     const stageKey = request.status === 'MATCHING' ? 'PENDING_MATCH' : request.status;
     const stageIndex = STAGES.indexOf(stageKey);
     const isTerminalBad = request.status === 'NOT_FOUND' || request.status === 'CANCELLED';
@@ -183,7 +188,14 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
                     )}
 
                     {showWorker && request.workerId != null && (
-                        <QuotationPanel requestId={requestId} role="customer" active={!TERMINAL.includes(request.status)}/>
+                        <QuotationPanel requestId={requestId} role="customer" active={!TERMINAL.includes(request.status)}
+                                        onLoaded={(list) => setAcceptedQuotation(list.find((q) => q.status === 'ACCEPTED') ?? null)}/>
+                    )}
+
+                    {showWorker && request.workerId != null && (
+                        <PaymentPanel requestId={requestId} requestStatus={request.status}
+                                      acceptedAmount={acceptedQuotation?.totalAmount ?? null}
+                                      version={`${request.updatedAt ?? ''}|${paymentVersion}`}/>
                     )}
 
                     {showWorker && request.workerId != null && (
@@ -211,10 +223,10 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
                     {tracking && (
                         <>
                             <p className="section-title" style={{marginTop: 20}}><span>Vị trí thợ</span></p>
-                            <WorkerTrackingMap customer={{lat: Number(request.lat), lng: Number(request.lng)}} worker={workerLoc}/>
+                            <WorkerTrackingMap customer={{lat: Number(request.lat), lng: Number(request.lng)}} worker={shownWorkerLoc}/>
                             <p className="muted" style={{margin: '6px 0'}}>
-                                {workerLoc
-                                    ? `Cập nhật lúc ${new Date(workerLoc.updatedAt).toLocaleTimeString('vi-VN')}`
+                                {shownWorkerLoc
+                                    ? `Cập nhật lúc ${new Date(shownWorkerLoc.updatedAt).toLocaleTimeString('vi-VN')}`
                                     : 'Đang chờ vị trí của thợ...'}
                             </p>
                         </>

@@ -1,10 +1,11 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {
-    ArrowLeft, Camera, Check, Droplet, LocateFixed, Refrigerator, Sparkles, WashingMachine, Wind, Wrench, X, Zap,
+    ArrowLeft, Camera, Check, Droplet, Loader2, LocateFixed, Refrigerator, Sparkles, WashingMachine, Wind, Wrench, X, Zap,
 } from 'lucide-react';
 import {createRepairRequest} from '../../api/repairRequestApi';
 import {classifyIncident} from '../../api/aiApi';
+import {stepperTrackStyle, stepperFillStyle} from '../../utils/stepper';
 import {autocompleteAddress, getCurrentPosition, getPlaceDetail, reverseGeocode} from '../../api/mapApi';
 import {getCategories} from '../../api/categoryApi';
 import {getAddresses} from '../../api/addressApi';
@@ -26,7 +27,7 @@ const MAX_VIDEOS = 1;
 const MAX_IMAGE_MB = 5;
 const MAX_VIDEO_MB = 30;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
-const TOTAL_STEPS = 4; // SRS mục 4: tạo yêu cầu không quá 5 bước
+const TOTAL_STEPS = 4;
 const STEP_LABELS = ['Dịch vụ', 'Sự cố', 'Địa chỉ', 'Xác nhận'];
 
 const EMPTY_FORM = {
@@ -44,7 +45,7 @@ export default function CreateRequestPage() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(EMPTY_FORM);
     const [categories, setCategories] = useState([]);
-    const [catState, setCatState] = useState('loading'); // loading | ready | error
+    const [catState, setCatState] = useState('loading');
     const [media, setMedia] = useState([]);
     const [mediaError, setMediaError] = useState('');
     const [error, setError] = useState('');
@@ -66,12 +67,15 @@ export default function CreateRequestPage() {
         addresses.find((address) => address.id === form.addressId) ||
         addresses.find((address) => address.defaultAddress);
 
+    // Cập nhật ref trong effect (không ghi ref lúc render — rule react-hooks/refs).
     const mediaRef = useRef(media);
-    mediaRef.current = media;
+    useEffect(() => {
+        mediaRef.current = media;
+    }, [media]);
     const idRef = useRef(0);
 
+    // catState khởi tạo sẵn là 'loading' nên lần tải đầu không cần setState đồng bộ trong effect.
     const loadCategories = useCallback(() => {
-        setCatState('loading');
         getCategories()
             .then((list) => {
                 setCategories(list);
@@ -79,6 +83,12 @@ export default function CreateRequestPage() {
             })
             .catch(() => setCatState('error'));
     }, []);
+
+    // Nút "Thử lại": hiện lại "Đang tải..." trong event handler rồi gọi lại.
+    const retryCategories = () => {
+        setCatState('loading');
+        loadCategories();
+    };
 
     useEffect(() => {
         loadCategories();
@@ -124,7 +134,7 @@ export default function CreateRequestPage() {
     // Giải phóng các URL xem trước khi rời trang
     useEffect(() => () => mediaRef.current.forEach((m) => URL.revokeObjectURL(m.url)), []);
 
-    // Người dùng đang sửa dữ liệu thì xoá thông báo lỗi cũ, tránh hiện lỗi đã hết đúng
+    
     const setField = (name, value) => {
         setForm((f) => ({...f, [name]: value}));
         setError('');
@@ -178,7 +188,7 @@ export default function CreateRequestPage() {
         setMediaError('');
     }
 
-    // AI đọc mô tả + ảnh (không đọc video) rồi gợi ý loại sửa chữa; khách vẫn là người quyết định
+    
     async function analyzeWithAi() {
         const images = media.filter((m) => !m.isVideo).map((m) => m.file);
         if (form.description.trim().length < 5 && images.length === 0) {
@@ -239,7 +249,7 @@ export default function CreateRequestPage() {
         setSubmitting(true);
         setError('');
         try {
-            // Tên field phải khớp CreateRepairRequest của BE (tiếng Anh)
+
             const data = {
                 categoryId: form.categoryId,
                 description: form.description.trim(),
@@ -309,7 +319,7 @@ export default function CreateRequestPage() {
 
     const [locating, setLocating] = useState(false);
 
-    // Dùng GPS: lấy tọa độ hiện tại, đổi ngược ra địa chỉ chữ để khách kiểm tra lại
+    
     async function useMyLocation() {
         setLocating(true);
         setError('');
@@ -359,10 +369,13 @@ export default function CreateRequestPage() {
                     <div className="request-topbar-step">Bước <strong>{step}</strong>/{TOTAL_STEPS}</div>
                 </header>
 
-                <div className="progress request-progress" role="img" aria-label={`Bước ${step} trên ${TOTAL_STEPS}`}>
+                <div className="stepper" role="img" aria-label={`Bước ${step} trên ${TOTAL_STEPS}`}>
+                    <div className="stepper-track" style={stepperTrackStyle(TOTAL_STEPS)}/>
+                    <div className="stepper-fill" style={stepperFillStyle(TOTAL_STEPS, step - 1)}/>
                     {STEP_LABELS.map((label, i) => (
-                        <div key={label} className={`progress-step${i < step ? ' on' : ''}${i === step - 1 ? ' current' : ''}`}>
-                            <span>{i + 1}</span>
+                        <div key={label}
+                             className={`stepper-item${i < step - 1 ? ' done' : ''}${i === step - 1 ? ' current' : ''}`}>
+                            <span className="stepper-dot">{i < step - 1 ? <Check size={14} aria-hidden="true"/> : i + 1}</span>
                             <b>{label}</b>
                         </div>
                     ))}
@@ -377,7 +390,7 @@ export default function CreateRequestPage() {
                             {catState === 'error' && (
                                 <div className="notice">
                                     <p>Không tải được danh mục dịch vụ.</p>
-                                    <button type="button" className="btn secondary small" onClick={loadCategories}>Thử
+                                    <button type="button" className="btn secondary small" onClick={retryCategories}>Thử
                                         lại
                                     </button>
                                 </div>
@@ -455,8 +468,10 @@ export default function CreateRequestPage() {
 
                             <div className="ai-box">
                                 <button type="button" className="btn secondary" onClick={analyzeWithAi}
-                                        disabled={aiLoading}>
-                                    <Sparkles size={18} aria-hidden="true"/>
+                                        disabled={aiLoading} aria-busy={aiLoading}>
+                                    {aiLoading
+                                        ? <Loader2 size={18} className="spin" aria-hidden="true"/>
+                                        : <Sparkles size={18} aria-hidden="true"/>}
                                     {aiLoading ? 'AI đang phân tích...' : 'Phân tích bằng AI'}
                                 </button>
                                 <p className="hint">AI đọc mô tả và ảnh để gợi ý loại sửa chữa (điện, nước, máy giặt...).
@@ -522,7 +537,7 @@ export default function CreateRequestPage() {
                                 <p className="hint">Đang tải địa chỉ đã lưu...</p>
                             ) : (
                                 <>
-{selectedAddress && (
+                                    {selectedAddress && (
                                         <>
                                             <div className="saved-address-header">
                             <span className="label">
@@ -607,50 +622,50 @@ export default function CreateRequestPage() {
                                                             (address) =>
                                                                 address.id !==
                                                                 selectedAddress.id
-                                                            )
-                                                            .map((address) => (
-                                                                <button
-                                                                    key={address.id}
-                                                                    type="button"
-                                                                    className="address-card"
-                                                                    onClick={() => {
-                                                                        setField(
-                                                                            'addressId',
-                                                                            address.id
-                                                                        );
-                                                                        setField(
-                                                                            'addressSnapshot',
-                                                                            address.fullAddress
-                                                                        );
-                                                                        setField(
-                                                                            'lat',
-                                                                            address.lat
-                                                                        );
-                                                                        setField(
-                                                                            'lng',
-                                                                            address.lng
-                                                                        );
+                                                        )
+                                                        .map((address) => (
+                                                            <button
+                                                                key={address.id}
+                                                                type="button"
+                                                                className="address-card"
+                                                                onClick={() => {
+                                                                    setField(
+                                                                        'addressId',
+                                                                        address.id
+                                                                    );
+                                                                    setField(
+                                                                        'addressSnapshot',
+                                                                        address.fullAddress
+                                                                    );
+                                                                    setField(
+                                                                        'lat',
+                                                                        address.lat
+                                                                    );
+                                                                    setField(
+                                                                        'lng',
+                                                                        address.lng
+                                                                    );
 
-                                                                        setSuggestions([]);
-                                                                        setShowSuggestions(false);
+                                                                    setSuggestions([]);
+                                                                    setShowSuggestions(false);
 
-                                                                        // Chọn xong thì thu danh sách
-                                                                        setShowOtherAddresses(false);
-                                                                    }}
-                                                                >
-                                                                    <div className="address-card-content">
-                                                                        <div className="address-card-title">
-                                                                            <strong>
-                                                                                {address.label}
-                                                                            </strong>
-                                                                        </div>
 
-                                                                        <p>
-                                                                            {address.fullAddress}
-                                                                        </p>
+                                                                    setShowOtherAddresses(false);
+                                                                }}
+                                                            >
+                                                                <div className="address-card-content">
+                                                                    <div className="address-card-title">
+                                                                        <strong>
+                                                                            {address.label}
+                                                                        </strong>
                                                                     </div>
-                                                                </button>
-                                                            ))}
+
+                                                                    <p>
+                                                                        {address.fullAddress}
+                                                                    </p>
+                                                                </div>
+                                                            </button>
+                                                        ))}
                                                 </div>
                                             )}
                                         </>

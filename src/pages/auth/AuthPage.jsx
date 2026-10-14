@@ -55,6 +55,10 @@ export default function AuthPage({onAuthenticated}) {
                 </div>
             </div>
             <div className="auth-body">
+                <div className='auth-mobile-brand'>
+                    <img src={logoImg} alt="" />
+                    <b>Thợ nhà</b>
+                </div>
                 <div className="auth-tabs">
                     <button className={mode === 'login' ? 'on' : ''} onClick={() => setMode('login')}><LogIn size={18}/>Đăng
                         nhập

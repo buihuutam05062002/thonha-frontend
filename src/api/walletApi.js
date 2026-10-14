@@ -18,10 +18,11 @@ import axiosClient from "./axiosClient";
  */
 
 export const TXN_LABELS = {
-  TOPUP: "Nạp tiền",
-  COMMISSION: "Trừ hoa hồng",
-  ADJUSTMENT_CREDIT: "Điều chỉnh tăng",
-  ADJUSTMENT_DEBIT: "Điều chỉnh giảm",
+    TOPUP: "Nạp tiền",
+    COMMISSION: "Trừ hoa hồng",
+    ADJUSTMENT_CREDIT: "Điều chỉnh tăng",
+    ADJUSTMENT_DEBIT: "Điều chỉnh giảm",
+    JOB_EARNING: "Thu nhập đơn online",
 };
 
 /** Nhãn loại giao dịch (ưu tiên nhãn BE gửi kèm, dự phòng bảng trên). */
@@ -34,25 +35,25 @@ export const isCredit = (t) => Number(t.amount) >= 0;
 export const getMyWallet = () => axiosClient.get("/worker/wallet");
 
 export const getMyWalletTransactions = ({ page = 0, size = 15 } = {}) =>
-  axiosClient.get("/worker/wallet/transactions", { params: { page, size } });
+    axiosClient.get("/worker/wallet/transactions", { params: { page, size } });
 
 // ---------------------------------------------------------------- admin
 export const fetchWallets = ({ keyword, negativeOnly = false, page = 0, size = 8 } = {}) =>
-  axiosClient.get("/admin/wallets", {
-    params: { keyword: keyword?.trim() || undefined, negativeOnly, page, size },
-  });
+    axiosClient.get("/admin/wallets", {
+        params: { keyword: keyword?.trim() || undefined, negativeOnly, page, size },
+    });
 
 export const fetchWallet = (workerId) => axiosClient.get(`/admin/wallets/${workerId}`);
 
 export const fetchWalletTransactions = (workerId, { page = 0, size = 10 } = {}) =>
-  axiosClient.get(`/admin/wallets/${workerId}/transactions`, { params: { page, size } });
+    axiosClient.get(`/admin/wallets/${workerId}/transactions`, { params: { page, size } });
 
 export const topUpWallet = (workerId, { amount, referenceCode, note }) =>
-  axiosClient.post(`/admin/wallets/${workerId}/top-up`, {
-    amount,
-    referenceCode: referenceCode?.trim() || undefined,
-    note: note?.trim() || undefined,
-  });
+    axiosClient.post(`/admin/wallets/${workerId}/top-up`, {
+        amount,
+        referenceCode: referenceCode?.trim() || undefined,
+        note: note?.trim() || undefined,
+    });
 
 export const adjustWallet = (workerId, { type, amount, reason }) =>
-  axiosClient.post(`/admin/wallets/${workerId}/adjustments`, { type, amount, reason: reason.trim() });
+    axiosClient.post(`/admin/wallets/${workerId}/adjustments`, { type, amount, reason: reason.trim() });

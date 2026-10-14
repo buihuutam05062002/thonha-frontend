@@ -45,18 +45,21 @@ export default function MyRequestsPage() {
     const nav = useNavigate();
     const [filterKey, setFilterKey] = useState('all');
     const [keywordInput, setKeywordInput] = useState('');
-    const [keyword, setKeyword] = useState(''); // đã debounce, dùng để gọi API
+    const [keyword, setKeyword] = useState('');
     const [page, setPage] = useState(0);
 
-    const [data, setData] = useState(null); // {content, totalPages, totalElements}
+    const [data, setData] = useState(null); 
     const [loading, setLoading] = useState(true);
+    const [loadedKey, setLoadedKey] = useState(null);
+
+
     const [error, setError] = useState('');
 
     const refreshTimer = useRef(null);
-    const requestSeq = useRef(0); // bỏ qua kết quả của lần gọi cũ khi người dùng đã đổi bộ lọc
+    const requestSeq = useRef(0);
     const userId = useAuth().user?.id;
 
-    // Gõ xong mới tìm, và về trang đầu
+    
     useEffect(() => {
         const id = setTimeout(() => {
             setKeyword(keywordInput.trim());
@@ -65,31 +68,38 @@ export default function MyRequestsPage() {
         return () => clearTimeout(id);
     }, [keywordInput]);
 
-    const load = useCallback(async (showError = true) => {
+    const queryKey = `${filterKey}|${keyword}|${page}`;
+    const loading = loadedKey !== queryKey;
+
+    // Dùng chuỗi .then (không async/await) để mọi setState nằm trong callback bất đồng bộ —
+    // gọi load() trong effect không vi phạm rule react-hooks/set-state-in-effect.
+    const load = useCallback((showError = true) => {
         const seq = ++requestSeq.current;
+        const key = `${filterKey}|${keyword}|${page}`;
         const statuses = REQUEST_FILTERS.find((f) => f.key === filterKey)?.statuses ?? [];
-        try {
-            const res = await searchMyRepairRequests({statuses, keyword, page, size: PAGE_SIZE});
-            if (seq !== requestSeq.current) return;
-            if (res.content.length === 0 && page > 0 && res.totalPages > 0) {
-                setPage(res.totalPages - 1); // trang hiện tại không còn dữ liệu (vd đơn đổi trạng thái khỏi bộ lọc)
-                return;
-            }
-            setData(res);
-            setError('');
-        } catch (e) {
-            if (seq === requestSeq.current && showError) setError(e.message);
-        } finally {
-            if (seq === requestSeq.current) setLoading(false);
-        }
+        return searchMyRepairRequests({statuses, keyword, page, size: PAGE_SIZE})
+            .then((res) => {
+                if (seq !== requestSeq.current) return;
+                if (res.content.length === 0 && page > 0 && res.totalPages > 0) {
+                    setPage(res.totalPages - 1);
+                    return;
+                }
+                setData(res);
+                setError('');
+            })
+            .catch((e) => {
+                if (seq === requestSeq.current && showError) setError(e.message);
+            })
+            .finally(() => {
+                if (seq === requestSeq.current) setLoadedKey(key);
+            });
     }, [filterKey, keyword, page]);
 
     useEffect(() => {
-        setLoading(true);
         load();
     }, [load]);
 
-    // Realtime: có sự kiện của bất kỳ yêu cầu nào thì tải lại trang hiện tại
+    
     const handleMessage = useCallback(() => {
         clearTimeout(refreshTimer.current);
         refreshTimer.current = setTimeout(() => load(false), 300);
@@ -98,7 +108,7 @@ export default function MyRequestsPage() {
     const wsConnected = useUserTopics(userId, ['requests'], handleMessage);
 
     useEffect(() => {
-        if (wsConnected) load(false); // bù sự kiện bị lỡ khi mất kết nối
+        if (wsConnected) load(false);
     }, [wsConnected, load]);
 
     useEffect(() => {
@@ -109,7 +119,7 @@ export default function MyRequestsPage() {
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [load]);
 
-    // dự phòng khi WebSocket không kết nối được
+
     useEffect(() => {
         if (wsConnected) return undefined;
         const id = setInterval(() => {
@@ -171,7 +181,7 @@ export default function MyRequestsPage() {
                     {error && !data && (
                         <div className="notice">
                             <p>{error}</p>
-                            <button type="button" className="btn secondary small" onClick={() => { setLoading(true); load(); }}>Thử lại</button>
+                            <button type="button" className="btn secondary small" onClick={() => { setLoadedKey(null); load(); }}>Thử lại</button>
                         </div>
                     )}
 

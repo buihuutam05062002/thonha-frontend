@@ -563,6 +563,18 @@
   .customer-ui .auth-body {
     padding: 30px 24px;
   }
+  .customer-ui .auth-body > h1 {
+    font-size: 25px;
+  }
+  .customer-ui.auth-page { padding: 68px 12px 24px; }
+.customer-ui .auth-shell { border-radius: 20px; }
+.customer-ui .auth-benefits { display: none; }
+.customer-ui .auth-brand { flex-direction: row; align-items: center; gap: 16px; }
+.customer-ui .auth-brand-logo-wrap { margin-bottom: 0; flex: 0 0 auto; width: 64px; height: 64px; border-radius: 16px; }
+.customer-ui .auth-brand-logo { width: 52px; height: 52px; }
+.customer-ui .auth-brand-copy > span:last-child { font-size: 13px; line-height: 1.5; }
+.customer-ui .auth-tabs button { min-height: 44px; font-size: 14px; }
+.customer-ui .auth-body .input { font-size: 16px; } /* tránh iOS tự zoom */
 }
 
 /* =========================================================
@@ -571,11 +583,12 @@
 .customer-ui.auth-page {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 84px 24px 48px;
   background:
-    radial-gradient(circle at 8% 12%, rgba(245,130,13,.12), transparent 28%),
-    radial-gradient(circle at 92% 82%, rgba(30,41,59,.08), transparent 30%),
-    linear-gradient(135deg, #fffaf5 0%, #f8fafc 52%, #fff 100%);
+          radial-gradient(circle at 8% 12%, rgba(245,130,13,.12), transparent 28%),
+          radial-gradient(circle at 92% 82%, rgba(30,41,59,.08), transparent 30%),
+          linear-gradient(135deg, #fffaf5 0%, #f8fafc 52%, #fff 100%);
 }
 
 .customer-ui .auth-topbar {
@@ -615,8 +628,8 @@
   padding: 52px 52px 46px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 80% 15%, rgba(245,130,13,.20), transparent 30%),
-    linear-gradient(150deg, #1e293b 0%, #172033 100%);
+          radial-gradient(circle at 80% 15%, rgba(245,130,13,.20), transparent 30%),
+          linear-gradient(150deg, #1e293b 0%, #172033 100%);
 }
 
 .customer-ui .auth-brand::after {
@@ -794,67 +807,459 @@
   white-space: nowrap;
 }
 
-.customer-ui .request-progress {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+/* Bộ chỉ báo bước kiểu desktop: vòng tròn lớn hơn, canh giữa trong khung 1040px. */
+.customer-ui .stepper {
   max-width: 1040px;
   margin: 24px auto 10px;
   padding: 0 38px;
 }
 
-.customer-ui .progress-step {
+.customer-ui .stepper-dot { width: 34px; height: 34px; font-size: 13px; }
+.customer-ui .stepper-track,
+.customer-ui .stepper-fill { top: 16px; }
+.customer-ui .stepper-fill { background: var(--customer-orange); }
+
+.customer-ui .stepper-item b { font-size: 13px; font-weight: 700; color: #94a3b8; }
+.customer-ui .stepper-item.done b,
+.customer-ui .stepper-item.current b { color: var(--customer-dark); }
+
+.customer-ui .stepper-item.done .stepper-dot,
+.customer-ui .stepper-item.current .stepper-dot {
+  border-color: var(--customer-orange);
+  background: var(--customer-orange);
+}
+
+.customer-ui .step-no {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 38px;
+}
+
+.customer-ui .tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.customer-ui .tile,
+.customer-ui .opt,
+.customer-ui .address-card,
+.customer-ui .profile-head,
+.customer-ui .notice {
+  border-color: var(--customer-line);
+  border-radius: 18px;
+}
+
+.customer-ui .tile:hover,
+.customer-ui .opt:hover,
+.customer-ui .address-card:hover {
+  border-color: #fdba74;
+  box-shadow: 0 8px 24px rgba(15,23,42,.06);
+}
+
+.customer-ui .tile.sel,
+.customer-ui .opt.sel,
+.customer-ui .address-card.sel {
+  border-color: var(--customer-orange);
+  box-shadow: inset 0 0 0 1px var(--customer-orange), 0 8px 24px rgba(245,130,13,.08);
+}
+
+.customer-ui .tile.sel .tile-icon {
+  background: var(--customer-orange);
+}
+
+.customer-ui .input {
+  min-height: 52px;
+  border-color: var(--customer-line);
+  border-radius: 12px;
+}
+
+.customer-ui .input:focus {
+  border-color: var(--customer-orange);
+  box-shadow: 0 0 0 3px rgba(245,130,13,.13);
+}
+
+.customer-ui .btn.primary {
+  background: var(--customer-orange);
+  border-color: var(--customer-orange);
+  color: white;
+}
+
+.customer-ui .btn.secondary {
+  color: var(--customer-dark);
+}
+
+.customer-ui .footer {
+  padding: 18px 38px 24px;
+  background: white;
+  border-top: 1px solid var(--customer-line);
+}
+
+.customer-ui .profile-head {
+  padding: 24px;
+  box-shadow: 0 8px 25px rgba(15,23,42,.04);
+}
+
+.customer-ui .profile-avatar {
+  background: var(--customer-orange-soft);
+  color: var(--customer-orange);
+}
+
+/* Auth */
+.customer-ui.auth-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fff7ed 0%, #f8fafc 48%, #ffffff 100%);
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+}
+
+.customer-ui .auth-shell {
+  width: min(1000px, 100%);
+  min-height: auto;
+  margin: 0;
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  border-radius: 26px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 25px 70px rgba(15,23,42,.12);
+}
+
+.customer-ui .auth-brand {
+  min-height: 100%;
+  padding: 52px;
+  border: 0;
+  background: var(--customer-dark);
+  color: white;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.customer-ui .auth-brand b {
+  font-size: 30px;
+}
+
+.customer-ui .auth-brand span:last-child {
+  color: #cbd5e1;
+}
+
+.customer-ui .brand-mark {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  background: var(--customer-orange);
+  color: white;
+  font-size: 20px;
+}
+
+.customer-ui .auth-body {
+  padding: 48px 54px;
+}
+
+.customer-ui .auth-tabs button.on {
+  background: var(--customer-orange);
+  border-color: var(--customer-orange);
+}
+
+@media (max-width: 900px) {
+  .customer-ui .customer-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 52px 0 60px;
+  }
+  .customer-ui .customer-service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .customer-ui .customer-cta-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .customer-ui .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .customer-ui .auth-shell {
+    grid-template-columns: 1fr;
+  }
+  .customer-ui .auth-brand {
+    min-height: auto;
+    padding: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .customer-ui .customer-navbar-inner,
+  .customer-ui .customer-hero-inner,
+  .customer-ui .customer-section,
+  .customer-ui .customer-cta-inner {
+    width: min(100% - 28px, 1180px);
+  }
+  .customer-ui .customer-navbar-inner {
+    min-height: 68px;
+  }
+  .customer-ui .customer-nav a:not(.customer-primary),
+  .customer-ui .customer-nav button:not(.customer-primary) {
+    display: none;
+  }
+  .customer-ui .customer-hero h1 {
+    font-size: 38px;
+  }
+  .customer-ui .customer-service-grid,
+  .customer-ui .tiles {
+    grid-template-columns: 1fr;
+  }
+  .customer-ui .shell {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .customer-ui .body {
+    padding: 24px 18px 30px;
+  }
+  .customer-ui .progress {
+    padding: 0 18px;
+  }
+  .customer-ui .step-no {
+    padding: 0 18px;
+  }
+  .customer-ui .footer {
+    padding: 16px 18px 20px;
+  }
+  .customer-ui .auth-body {
+    padding: 30px 24px;
+  }
+}
+
+/* =========================================================
+   AUTH - polished standalone experience
+   ========================================================= */
+.customer-ui.auth-page {
   position: relative;
+  min-height: 100vh;
+  padding: 84px 24px 48px;
+  background:
+          radial-gradient(circle at 8% 12%, rgba(245,130,13,.12), transparent 28%),
+          radial-gradient(circle at 92% 82%, rgba(30,41,59,.08), transparent 30%),
+          linear-gradient(135deg, #fffaf5 0%, #f8fafc 52%, #fff 100%);
+}
+
+.customer-ui .auth-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
   color: #94a3b8;
+  font-size: 13px;
+}
+
+.customer-ui .auth-back {
+  color: var(--customer-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.customer-ui .auth-back:hover { color: var(--customer-orange); }
+
+.customer-ui .auth-shell {
+  width: min(1080px, 100%);
+  min-height: 620px;
+  grid-template-columns: .92fr 1.08fr;
+  border: 1px solid rgba(226,232,240,.9);
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(15,23,42,.13);
+}
+
+.customer-ui .auth-brand {
+  position: relative;
+  padding: 52px 52px 46px;
+  overflow: hidden;
+  background:
+          radial-gradient(circle at 80% 15%, rgba(245,130,13,.20), transparent 30%),
+          linear-gradient(150deg, #1e293b 0%, #172033 100%);
+}
+
+.customer-ui .auth-brand::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  right: -130px;
+  bottom: -150px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 50%;
+  box-shadow: 0 0 0 40px rgba(255,255,255,.025), 0 0 0 80px rgba(255,255,255,.018);
+}
+
+.customer-ui .auth-brand-logo-wrap {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 16px 32px rgba(0,0,0,.18);
+}
+
+.customer-ui .auth-brand-logo {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.customer-ui .auth-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.customer-ui .auth-kicker {
+  color: #fb923c !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.customer-ui .auth-brand-copy b {
+  color: #fff;
+  font-size: 36px;
+  line-height: 1.1;
+}
+
+.customer-ui .auth-brand-copy > span:last-child {
+  max-width: 380px;
+  color: #cbd5e1 !important;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.customer-ui .auth-benefits {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 15px;
+  margin-top: 42px;
+}
+
+.customer-ui .auth-benefits div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.customer-ui .auth-benefits svg { color: #fb923c; flex: 0 0 auto; }
+
+.customer-ui .auth-body {
+  padding: 56px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.customer-ui .auth-body > h1 {
+  margin-top: 28px;
+  margin-bottom: 8px;
+  font-size: 30px;
+  letter-spacing: -.02em;
+}
+
+.customer-ui .auth-body > .muted {
+  margin-bottom: 28px;
+}
+
+.customer-ui .auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 5px;
+  background: #f1f5f9;
+  border-radius: 14px;
+}
+
+.customer-ui .auth-tabs button {
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.customer-ui .auth-tabs button.on {
+  background: #fff;
+  color: var(--customer-orange);
+  border-color: #fed7aa;
+  box-shadow: 0 4px 12px rgba(15,23,42,.06);
+}
+
+.customer-ui .auth-submit {
+  min-height: 54px;
+  margin-top: 10px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(245,130,13,.20);
+}
+
+/* =========================================================
+   CREATE REQUEST - desktop/professional service flow
+   ========================================================= */
+.customer-ui .request-topbar {
+  min-height: 92px;
+  padding: 14px 34px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.customer-ui .request-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   min-width: 0;
 }
 
-.customer-ui .progress-step::after {
-  content: '';
-  position: absolute;
-  left: 32px;
-  right: -10px;
-  top: 15px;
-  height: 2px;
-  background: #e2e8f0;
-  z-index: 0;
-}
-
-.customer-ui .progress-step:last-child::after { display: none; }
-
-.customer-ui .progress-step span {
-  position: relative;
-  z-index: 1;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
+.customer-ui .request-logo {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
   flex: 0 0 auto;
-  border-radius: 50%;
-  border: 2px solid #e2e8f0;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 800;
 }
 
-.customer-ui .progress-step b {
-  position: relative;
-  z-index: 1;
-  font-size: 12px;
+.customer-ui .request-topbar h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.customer-ui .request-topbar-left > div > span {
+  display: block;
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.customer-ui .request-topbar-step {
+  align-self: center;
+  padding: 9px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
   white-space: nowrap;
 }
-
-.customer-ui .progress-step.on { color: var(--customer-orange); }
-.customer-ui .progress-step.on::after { background: #fdba74; }
-.customer-ui .progress-step.on span {
-  border-color: var(--customer-orange);
-  background: var(--customer-orange);
-  color: #fff;
-}
-.customer-ui .progress-step.current b { color: var(--customer-dark); }
 
 .customer-ui .step-no {
   color: #64748b;
@@ -978,20 +1383,40 @@
   font-weight: 800;
   box-shadow: 0 8px 18px rgba(245,130,13,.18);
 }
+.customer-ui .auth-mobile-brand { display: none; }
+
 
 @media (max-width: 900px) {
+  .customer-ui .auth-brand { display: none; }
   .customer-ui .auth-topbar { width: calc(100% - 32px); }
   .customer-ui.auth-page { padding: 78px 16px 28px; }
-  .customer-ui .auth-shell { min-height: auto; }
+  .customer-ui .auth-shell { min-height: auto; 
+    grid-template-columns: minmax(0,1fr);
+    border-radius: 22px;
+  
+  }
   .customer-ui .auth-brand { padding: 36px; }
   .customer-ui .auth-body { padding: 36px; }
   .customer-ui .request-topbar { padding: 14px 22px; }
-  .customer-ui .request-progress { padding: 0 22px; }
+  .customer-ui .stepper { padding: 0 22px; }
   .customer-ui .body > section { padding: 26px 24px 30px; }
   .customer-ui .summary { grid-template-columns: 1fr; }
+
+
+    .customer-ui .auth-mobile-brand {                
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .customer-ui .auth-mobile-brand img { width: 44px; height: 44px; object-fit: contain; }
+  .customer-ui .auth-mobile-brand b   { font-size: 1.25rem; }
+  .customer-ui .auth-body { padding: clamp(22px, 5vw, 40px); }
+  .customer-ui.auth-page  { padding: 68px 12px 24px; }
 }
 
 @media (max-width: 640px) {
+  .customer-ui .auth-body .input { font-size: 16px; }
   .customer-ui .auth-topbar span { display: none; }
   .customer-ui .auth-brand { padding: 30px 24px; }
   .customer-ui .auth-brand-logo-wrap { width: 82px; height: 82px; margin-bottom: 18px; border-radius: 20px; }
@@ -1005,9 +1430,8 @@
   .customer-ui .request-topbar-left > div > span { display: none; }
   .customer-ui .request-topbar h1 { font-size: 18px; }
   .customer-ui .request-topbar-step { padding: 7px 10px; font-size: 12px; }
-  .customer-ui .request-progress { grid-template-columns: repeat(5, 30px); justify-content: space-between; padding: 0 18px; }
-  .customer-ui .progress-step b,
-  .customer-ui .progress-step::after { display: none; }
+  .customer-ui .stepper { margin: 10px 18px 4px; padding: 0; }
+  .customer-ui .stepper-item b { display: none; }
   .customer-ui .body > section { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; padding: 24px 18px; }
   .customer-ui .footer { padding: 16px 18px 20px; }
 }
@@ -1111,34 +1535,6 @@
   font-weight: 900;
 }
 
-/* Request stepper: never clip the Vietnamese step labels on desktop. */
-.customer-ui .request-progress {
-  width: min(1120px, calc(100% - 64px));
-  max-width: none;
-  grid-template-columns: repeat(5, minmax(125px, 1fr));
-  gap: 0;
-  overflow: visible;
-  padding: 0;
-}
-
-.customer-ui .progress-step {
-  min-width: 0;
-  overflow: visible;
-}
-
-.customer-ui .progress-step b {
-  display: block;
-  white-space: nowrap;
-  overflow: visible;
-  font-size: 13px;
-  line-height: 1.2;
-}
-
-.customer-ui .progress-step::after {
-  left: 39px;
-  right: 8px;
-}
-
 @media (max-width: 991.98px) {
   .worker-landing-navbar-inner,
   .worker-register-navbar-inner {
@@ -1163,14 +1559,6 @@
   .worker-header-logo {
     height: 42px !important;
     max-width: 160px;
-  }
-
-  .customer-ui .request-progress {
-    width: calc(100% - 36px);
-    grid-template-columns: repeat(5, 30px);
-    justify-content: space-between;
-    padding: 0;
-    overflow: visible;
   }
 }
 
@@ -1225,4 +1613,49 @@
   flex-direction: column;
   gap: 6px;
   align-items: flex-start;
+}
+
+/* Bootstrap được import SAU styles.css nên .btn của Bootstrap (display:inline-block, font-weight:400,
+   padding, line-height) đè lên .btn của dự án -> icon rớt xuống dòng trên, chữ lệch. Đặt lại bố cục nút
+   ở đây (customer-ui.css nạp sau Bootstrap); màu/viền vẫn do .btn.primary/.secondary/.danger quyết định. */
+.customer-ui .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 50px;
+  padding: 0 18px;
+  border-width: 1.5px;
+  border-radius: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.customer-ui .btn.small {
+  width: auto;
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* Hồ sơ: "Thêm địa chỉ mới" và "Đăng xuất" cùng độ rộng, canh GIỮA khung. Khung hẹp thì rộng bằng nút
+   "Lưu thay đổi" (100%), khung rộng thì dừng ở 360px rồi căn giữa — không phụ thuộc kích thước cửa sổ. */
+.customer-ui .profile-body > .btn {
+  width: 100%;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@keyframes customer-spin {
+  to { transform: rotate(360deg); }
+}
+
+.customer-ui .spin {
+  animation: customer-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-ui .spin { animation-duration: 2.5s; }
 }
