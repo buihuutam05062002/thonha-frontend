@@ -234,6 +234,13 @@ export default function CreateRequestPage() {
         setStep((s) => Math.max(1, s - 1));
     }
 
+    // Nhảy thẳng tới bước cần sửa (dùng cho nút "Sửa" ở bước kiểm tra). Dữ liệu đã nhập vẫn được giữ.
+    function goToStep(n) {
+        setError('');
+        setStep(n);
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
     async function submit() {
         for (let n = 1; n <= 3; n += 1) {
             const e = validate(n);
@@ -751,27 +758,27 @@ export default function CreateRequestPage() {
                             <h2>Kiểm tra lại yêu cầu</h2>
                             <dl className="summary">
                                 <div>
-                                    <dt>Thiết bị</dt>
+                                    <dt>Thiết bị<button type="button" className="summary-edit" onClick={() => goToStep(1)}>Sửa</button></dt>
                                     <dd>{category?.name}</dd>
                                 </div>
                                 <div>
-                                    <dt>Sự cố</dt>
+                                    <dt>Sự cố<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{form.description.trim()}</dd>
                                 </div>
                                 <div>
-                                    <dt>Mức độ</dt>
+                                    <dt>Mức độ<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{form.mucDoUuTien === 'URGENT' ? 'Khẩn cấp' : 'Thường'}</dd>
                                 </div>
                                 <div>
-                                    <dt>Đính kèm</dt>
+                                    <dt>Đính kèm<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{media.length ? `${media.length} tệp` : 'Không có'}</dd>
                                 </div>
                                 <div>
-                                    <dt>Địa chỉ</dt>
+                                    <dt>Địa chỉ<button type="button" className="summary-edit" onClick={() => goToStep(3)}>Sửa</button></dt>
                                     <dd>{form.addressSnapshot.trim()}</dd>
                                 </div>
                             </dl>
-                            <p className="hint">Bấm nút quay lại nếu cần sửa thông tin ở bước trước.</p>
+                            <p className="hint">Cần chỉnh thông tin? Bấm "Sửa" ở từng mục hoặc nút "Quay lại".</p>
                         </section>
                     )}
 
@@ -779,6 +786,11 @@ export default function CreateRequestPage() {
                 </div>
 
                 <div className="footer">
+                    {step > 1 && (
+                        <button type="button" className="btn secondary" onClick={back} disabled={submitting}>
+                            Quay lại
+                        </button>
+                    )}
                     {step < TOTAL_STEPS ? (
                         <button type="button" className="btn primary" onClick={next}>Tiếp tục</button>
                     ) : (

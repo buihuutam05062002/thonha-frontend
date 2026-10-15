@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {AlertTriangle, X} from 'lucide-react';
+import {toast} from 'react-toastify';
 import {
     COMPLAINT_REASON_LABELS,
     complaintReasonLabel,
@@ -9,6 +10,7 @@ import {
 } from '../../api/complaintApi';
 import {useAuth} from '../../auth/useAuth';
 import {useUserTopics} from '../../hooks/useUserTopics';
+import {useConfirm} from '../ui/confirm/confirmContext';
 
 const ACCENT = '#F5820D';
 const DESC_MAX = 2000;
@@ -33,6 +35,7 @@ const OPEN = ['PENDING', 'PROCESSING'];
 
 export default function ComplaintPanel({requestId, role}) {
     const userId = useAuth().user?.id;
+    const confirm = useConfirm();
     const reasons = REASONS_BY_ROLE[role] ?? REASONS_BY_ROLE.customer;
 
     const [loaded, setLoaded] = useState(false);
@@ -106,16 +109,28 @@ export default function ComplaintPanel({requestId, role}) {
         if (busy) return;
         if (!reason) { setError('Vui lòng chọn lý do khiếu nại'); return; }
         if (!description.trim()) { setError('Vui lòng mô tả vấn đề'); return; }
+
+        const ok = await confirm({
+            title: 'Gửi khiếu nại?',
+            message: `Lý do: ${COMPLAINT_REASON_LABELS[reason]}`
+                + (files.length ? `\nKèm ${files.length} ảnh bằng chứng.` : '')
+                + '\nKhiếu nại sẽ được chuyển tới quản trị viên xem xét. Trong lúc đang xử lý, bạn chưa thể gửi khiếu nại khác cho đơn này.',
+            confirmText: 'Gửi khiếu nại',
+            cancelText: 'Xem lại',
+        });
+        if (!ok) return;
+
         setBusy(true);
         setError('');
         try {
             await createComplaint({requestId, reason, description, files});
             reset();
+            toast.success('Đã gửi khiếu nại. Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
             setSent(true);
             await load();
         } catch (err) {
             setError(err.message);
-            load(); 
+            load();
         } finally {
             setBusy(false);
         }

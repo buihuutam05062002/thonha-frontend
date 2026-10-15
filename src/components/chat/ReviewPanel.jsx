@@ -3,6 +3,8 @@ import {Star} from 'lucide-react';
 import {REVIEW_MAX_COMMENT, createReview, getReviewByRequest} from '../../api/reviewApi';
 import {useAuth} from '../../auth/useAuth';
 import {useUserTopics} from '../../hooks/useUserTopics';
+import {toast} from 'react-toastify';
+import {useConfirm} from '../ui/confirm/confirmContext';
 
 const ACCENT = '#F5820D';
 const LABELS = ['', 'Rất tệ', 'Chưa tốt', 'Bình thường', 'Tốt', 'Rất tốt'];
@@ -28,6 +30,7 @@ function Stars({value, size = 20, onPick, onHover}) {
 
 export default function ReviewPanel({requestId, role}) {
     const userId = useAuth().user?.id;
+    const confirm = useConfirm();
     const [loaded, setLoaded] = useState(false);
     const [review, setReview] = useState(null);
     const [loadError, setLoadError] = useState('');
@@ -59,13 +62,23 @@ export default function ReviewPanel({requestId, role}) {
     async function submit(e) {
         e.preventDefault();
         if (rating < 1 || busy) return;
+
+        const ok = await confirm({
+            title: 'Gửi đánh giá?',
+            message: `Bạn đánh giá thợ ${rating}/5 sao${comment.trim() ? ' kèm nhận xét' : ''}.\nĐánh giá đã gửi sẽ không thể chỉnh sửa.`,
+            confirmText: 'Gửi đánh giá',
+            cancelText: 'Xem lại',
+        });
+        if (!ok) return;
+
         setBusy(true);
         setError('');
         try {
             setReview(await createReview(requestId, rating, comment));
+            toast.success('Cảm ơn bạn đã đánh giá thợ!');
         } catch (err) {
             setError(err.message);
-            load(); 
+            load();
         } finally {
             setBusy(false);
         }
