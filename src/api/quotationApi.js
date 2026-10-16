@@ -14,13 +14,22 @@ import axiosClient from "./axiosClient";
  */
 
 export const QUOTATION_MIN_AMOUNT = 1000;
+export const WARRANTY_MAX_DAYS = 3650;
+
+export const WARRANTY_QUICK_DAYS = [7, 14, 30, 90, 365];
 
 export async function getQuotationsByRequest(requestId) {
   return (await axiosClient.get(`/quotations/by-request/${requestId}`)) ?? [];
 }
 
-export function createQuotation(requestId, totalAmount, note) {
-  const body = { requestId, totalAmount: Number(totalAmount) };
+export function createQuotation(requestId, totalAmount, warrantyDays, note) {
+  const days =
+    warrantyDays === "" || warrantyDays == null ? 0 : Number(warrantyDays);
+  const body = {
+    requestId,
+    totalAmount: Number(totalAmount),
+    warrantyDays: days,
+  };
   if (note && note.trim()) body.note = note.trim();
   return axiosClient.post("/quotations", body);
 }

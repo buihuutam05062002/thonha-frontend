@@ -1,5 +1,31 @@
 import axiosClient from "./axiosClient";
 
+
+/**
+ * @param {{requestId:number, quotationId:number, description:string}} data
+ * @param {File[]} files 
+ */
+export function createWarrantyClaim(data, files = []) {
+  const formData = new FormData();
+  formData.append(
+    "data",
+    new Blob(
+      [JSON.stringify({ ...data, description: data.description?.trim() })],
+      { type: "application/json" },
+    ),
+  );
+  files.forEach((file) => file && formData.append("files", file));
+  return axiosClient.post("/warranty-claims", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
+}
+
+export const getMyWarrantyClaims = ({ requestId } = {}) =>
+  axiosClient.get("/warranty-claims/my", {
+    params: { requestId: requestId ?? undefined },
+  });
+
 export function getWarranties({ tab = "PENDING", keyword = "" } = {}) {
   return axiosClient.get("/worker/warranties", { params: { tab, keyword } });
 }

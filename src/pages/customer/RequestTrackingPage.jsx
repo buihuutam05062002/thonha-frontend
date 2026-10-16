@@ -20,6 +20,7 @@ import {
     TERMINAL,
 } from './requestStatus';
 import {formatDateTime} from '../../utils/format';
+import WarrantyStatusPanel from '../../components/customer/WarrantyStatusPanel';
 
 // Chỉ dùng khi WebSocket không kết nối được (mạng yếu, server restart...)
 const FALLBACK_POLL_MS = 8000;
@@ -159,125 +160,216 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const canCancel = CANCELLABLE.includes(request.status);
 
     return (
-        <div className="page">
-            <main className="shell">
-                <header className="topbar">
-                    {onBack ? (
-                        <button type="button" className="icon-btn" onClick={onBack} aria-label="Quay lại">
-                            <ArrowLeft size={22} aria-hidden="true"/>
-                        </button>
-                    ) : <span className="icon-spacer"/>}
-                    <h1>Yêu cầu {request.requestCode}</h1>
-                </header>
+      <div className="page">
+        <main className="shell">
+          <header className="topbar">
+            {onBack ? (
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={onBack}
+                aria-label="Quay lại"
+              >
+                <ArrowLeft size={22} aria-hidden="true" />
+              </button>
+            ) : (
+              <span className="icon-spacer" />
+            )}
+            <h1>Yêu cầu {request.requestCode}</h1>
+          </header>
 
-                <div className="body">
-                    <span className={`status-badge ${BADGE_TONE[request.status]}`}>{LABELS[request.status] ?? request.status}</span>
-                    <h2 style={{margin: '10px 0 2px'}}>{request.categoryName}</h2>
-                    <p className="muted" style={{margin: 0}}>{request.addressText}</p>
+          <div className="body">
+            <span className={`status-badge ${BADGE_TONE[request.status]}`}>
+              {LABELS[request.status] ?? request.status}
+            </span>
+            <h2 style={{ margin: "10px 0 2px" }}>{request.categoryName}</h2>
+            <p className="muted" style={{ margin: 0 }}>
+              {request.addressText}
+            </p>
 
-                    {showWorker && (
-                        <p style={{margin: '12px 0 0'}}>Thợ phụ trách: <b>{request.workerName}</b></p>
-                    )}
+            {showWorker && (
+              <p style={{ margin: "12px 0 0" }}>
+                Thợ phụ trách: <b>{request.workerName}</b>
+              </p>
+            )}
 
-                    {request.status === 'COMPLETED' && request.workerId != null && (
-                        <ReviewPanel requestId={requestId} role="customer"/>
-                    )}
+            {request.status === "COMPLETED" && request.workerId != null && (
+              <ReviewPanel requestId={requestId} role="customer" />
+            )}
 
-                    {showWorker && request.workerId != null && COMPLAINABLE.includes(request.status) && (
-                        <ComplaintPanel requestId={requestId} role="customer"/>
-                    )}
+            {showWorker &&
+              request.workerId != null &&
+              COMPLAINABLE.includes(request.status) && (
+                <ComplaintPanel requestId={requestId} role="customer" />
+              )}
 
-                    {showWorker && request.workerId != null && (
-                        <QuotationPanel requestId={requestId} role="customer" active={!TERMINAL.includes(request.status)}
-                                        onLoaded={(list) => setAcceptedQuotation(list.find((q) => q.status === 'ACCEPTED') ?? null)}/>
-                    )}
+            {showWorker && request.workerId != null && (
+              <QuotationPanel
+                requestId={requestId}
+                role="customer"
+                active={!TERMINAL.includes(request.status)}
+                onLoaded={(list) =>
+                  setAcceptedQuotation(
+                    list.find((q) => q.status === "ACCEPTED") ?? null,
+                  )
+                }
+              />
+            )}
 
-                    {showWorker && request.workerId != null && (
-                        <PaymentPanel requestId={requestId} requestStatus={request.status}
-                                      acceptedAmount={acceptedQuotation?.totalAmount ?? null}
-                                      version={`${request.updatedAt ?? ''}|${paymentVersion}`}/>
-                    )}
+            {request.status === "COMPLETED" && request.workerId != null && (
+              <WarrantyStatusPanel requestId={requestId} />
+            )}
 
-                    {showWorker && request.workerId != null && (
-                        <ChatBox requestId={requestId}/>
-                    )}
+            {showWorker && request.workerId != null && (
+              <PaymentPanel
+                requestId={requestId}
+                requestStatus={request.status}
+                acceptedAmount={acceptedQuotation?.totalAmount ?? null}
+                version={`${request.updatedAt ?? ""}|${paymentVersion}`}
+              />
+            )}
 
-                    {isTerminalBad ? (
-                        <div className="notice">
-                            <p>
-                                {request.status === 'NOT_FOUND'
-                                    ? 'Hiện chưa có thợ nào sẵn sàng gần bạn. Bạn có thể thử tạo lại yêu cầu sau ít phút.'
-                                    : 'Yêu cầu này đã được huỷ.'}
-                            </p>
-                        </div>
-                    ) : (
-                        <ol className="timeline" aria-label="Tiến trình yêu cầu">
-                            {STAGES.map((s, i) => (
-                                <li key={s} className={i < stageIndex ? 'done' : i === stageIndex ? 'current' : ''}>
-                                    {LABELS[s]}
-                                </li>
-                            ))}
-                        </ol>
-                    )}
+            {showWorker && request.workerId != null && (
+              <ChatBox requestId={requestId} />
+            )}
 
-                    {tracking && (
-                        <>
-                            <p className="section-title" style={{marginTop: 20}}><span>Vị trí thợ</span></p>
-                            <WorkerTrackingMap customer={{lat: Number(request.lat), lng: Number(request.lng)}} worker={shownWorkerLoc}/>
-                            <p className="muted" style={{margin: '6px 0'}}>
-                                {shownWorkerLoc
-                                    ? `Cập nhật lúc ${new Date(shownWorkerLoc.updatedAt).toLocaleTimeString('vi-VN')}`
-                                    : 'Đang chờ vị trí của thợ...'}
-                            </p>
-                        </>
-                    )}
+            {isTerminalBad ? (
+              <div className="notice">
+                <p>
+                  {request.status === "NOT_FOUND"
+                    ? "Hiện chưa có thợ nào sẵn sàng gần bạn. Bạn có thể thử tạo lại yêu cầu sau ít phút."
+                    : "Yêu cầu này đã được huỷ."}
+                </p>
+              </div>
+            ) : (
+              <ol className="timeline" aria-label="Tiến trình yêu cầu">
+                {STAGES.map((s, i) => (
+                  <li
+                    key={s}
+                    className={
+                      i < stageIndex
+                        ? "done"
+                        : i === stageIndex
+                          ? "current"
+                          : ""
+                    }
+                  >
+                    {LABELS[s]}
+                  </li>
+                ))}
+              </ol>
+            )}
 
-                    <p className="section-title" style={{marginTop: 20}}><span>Thông tin yêu cầu</span></p>
-                    <p style={{margin: '6px 0', whiteSpace: 'pre-wrap'}}>{request.description}</p>
-                    <p className="muted" style={{margin: '6px 0'}}>
-                        Mức độ ưu tiên: {PRIORITY_LABELS[request.priorityLevel] ?? request.priorityLevel}
-                        {request.createdAt ? ` | Gửi lúc ${formatDateTime(request.createdAt, '')}` : ''}
-                    </p>
+            {tracking && (
+              <>
+                <p className="section-title" style={{ marginTop: 20 }}>
+                  <span>Vị trí thợ</span>
+                </p>
+                <WorkerTrackingMap
+                  customer={{
+                    lat: Number(request.lat),
+                    lng: Number(request.lng),
+                  }}
+                  worker={shownWorkerLoc}
+                />
+                <p className="muted" style={{ margin: "6px 0" }}>
+                  {shownWorkerLoc
+                    ? `Cập nhật lúc ${new Date(shownWorkerLoc.updatedAt).toLocaleTimeString("vi-VN")}`
+                    : "Đang chờ vị trí của thợ..."}
+                </p>
+              </>
+            )}
 
-                    {request.attachmentUrls?.length > 0 && (
-                        <>
-                            <p className="section-title" style={{marginTop: 20}}><span>Hình ảnh đã gửi</span></p>
-                            <div className="media-grid">
-                                {request.attachmentUrls.map((url) => (
-                                    <div className="thumb" key={url}>
-                                        <img src={url} alt="Ảnh sự cố đã gửi"/>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
+            <p className="section-title" style={{ marginTop: 20 }}>
+              <span>Thông tin yêu cầu</span>
+            </p>
+            <p style={{ margin: "6px 0", whiteSpace: "pre-wrap" }}>
+              {request.description}
+            </p>
+            <p className="muted" style={{ margin: "6px 0" }}>
+              Mức độ ưu tiên:{" "}
+              {PRIORITY_LABELS[request.priorityLevel] ?? request.priorityLevel}
+              {request.createdAt
+                ? ` | Gửi lúc ${formatDateTime(request.createdAt, "")}`
+                : ""}
+            </p>
 
-                    {actionError && <div className="error" style={{marginTop: 16}}>{actionError}</div>}
-
-                    {!TERMINAL.includes(request.status) && (
-                        <div style={{display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20}}>
-                            <button type="button" className="btn secondary small" onClick={() => load()}>
-                                <RefreshCw size={16} aria-hidden="true" style={{marginRight: 6}}/>
-                                Cập nhật ngay
-                            </button>
-                            {canCancel && (
-                                <button type="button" className="btn danger small" onClick={cancel} disabled={cancelling}>
-                                    {cancelling ? 'Đang huỷ...' : 'Huỷ yêu cầu'}
-                                </button>
-                            )}
-                        </div>
-                    )}
+            {request.attachmentUrls?.length > 0 && (
+              <>
+                <p className="section-title" style={{ marginTop: 20 }}>
+                  <span>Hình ảnh đã gửi</span>
+                </p>
+                <div className="media-grid">
+                  {request.attachmentUrls.map((url) => (
+                    <div className="thumb" key={url}>
+                      <img src={url} alt="Ảnh sự cố đã gửi" />
+                    </div>
+                  ))}
                 </div>
+              </>
+            )}
 
-                <div className="footer">
-                    {onViewAll && (
-                        <button type="button" className="btn secondary" style={{marginBottom: 10}} onClick={onViewAll}>
-                            Yêu cầu của tôi
-                        </button>
-                    )}
-                    <button type="button" className="btn primary" onClick={onCreateAnother}>Tạo yêu cầu khác</button>
-                </div>
-            </main>
-        </div>
+            {actionError && (
+              <div className="error" style={{ marginTop: 16 }}>
+                {actionError}
+              </div>
+            )}
+
+            {!TERMINAL.includes(request.status) && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  marginTop: 20,
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn secondary small"
+                  onClick={() => load()}
+                >
+                  <RefreshCw
+                    size={16}
+                    aria-hidden="true"
+                    style={{ marginRight: 6 }}
+                  />
+                  Cập nhật ngay
+                </button>
+                {canCancel && (
+                  <button
+                    type="button"
+                    className="btn danger small"
+                    onClick={cancel}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? "Đang huỷ..." : "Huỷ yêu cầu"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="footer">
+            {onViewAll && (
+              <button
+                type="button"
+                className="btn secondary"
+                style={{ marginBottom: 10 }}
+                onClick={onViewAll}
+              >
+                Yêu cầu của tôi
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn primary"
+              onClick={onCreateAnother}
+            >
+              Tạo yêu cầu khác
+            </button>
+          </div>
+        </main>
+      </div>
     );
 }
