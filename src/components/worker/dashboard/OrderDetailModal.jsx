@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Modal, Spinner, Button, Form } from "react-bootstrap";
+import { Modal, Spinner, Button} from "react-bootstrap";
 import { parseApiError } from "../../../api/apiError";
 import { getWorkerRequestDetail, updateRequestStatus } from "../../../api/workerApi";
 import { formatDayTime, formatVnd } from "../../../utils/format";
@@ -30,7 +30,7 @@ function Row({ label, children }) {
 export function OrderDetailModal({ orderId, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [price, setPrice] = useState("");
+  const [quoteSummary, setQuoteSummary] = useState({ accepted: 0, pending: 0 });
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState(null);
 
@@ -39,7 +39,6 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
     setDetail(null);
     setLoadError(null);
     setActionError(null);
-    setPrice("");
     getWorkerRequestDetail(orderId)
       .then((d) => { if (!cancelled) setDetail(d); })
       .catch((err) => {
@@ -53,14 +52,10 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
 
   const advance = async () => {
     if (!next || saving) return;
-    if (completing && price !== "" && (Number.isNaN(Number(price)) || Number(price) < 0)) {
-      setActionError("Giá không hợp lệ.");
-      return;
-    }
     setSaving(true);
     setActionError(null);
     try {
-      const updated = await updateRequestStatus(detail.id, next.to, price);
+      const updated = await updateRequestStatus(detail.id, next.to);
       setDetail(updated);
       onChanged?.();
     } catch (err) {
@@ -116,12 +111,17 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
             )}
 
             {completing && (
-              <Form.Group className="mt-2">
-                <Form.Label className="small fw-semibold">Giá thực tế (đ) - không bắt buộc</Form.Label>
-                <Form.Control type="number" min="0" step="1000" placeholder="VD: 350000"
-                              value={price} onChange={(e) => setPrice(e.target.value)} disabled={saving} />
-                <Form.Text className="text-muted">Số tiền này sẽ được tính vào thu nhập của bạn.</Form.Text>
-              </Form.Group>
+                <div className="border rounded-3 bg-light small p-2 mt-2">
+                  <div>Tổng báo giá khách đã chấp nhận: <b>{formatVnd(quoteSummary.accepted)}</b></div>
+                  {quoteSummary.pending > 0 && (
+                      <div className="text-warning-emphasis mt-1">
+                        Còn {quoteSummary.pending} báo giá chờ khách phản hồi, sẽ không được tính nếu bạn hoàn thành đơn.
+                      </div>
+                  )}
+                  {quoteSummary.accepted <= 0 && (
+                      <div className="text-danger mt-1">Cần ít nhất một báo giá được khách chấp nhận mới hoàn thành được đơn.</div>
+                  )}
+                </div>
             )}
             {detail.status === "COMPLETED" && <ReviewPanel requestId={detail.id} role="worker" />}
             {["MATCHED", "ON_THE_WAY", "IN_PROGRESS", "COMPLETED"].includes(detail.status) && (
@@ -132,10 +132,12 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
                 requestId={detail.id}
                 role="worker"
                 active={detail.status !== "COMPLETED"}
-                onLoaded={(list) => {
-                  const accepted = list.find((q) => q.status === "ACCEPTED");
-                  if (accepted) setPrice((p) => p || String(Math.round(Number(accepted.totalAmount))));
-                }}
+                onLoaded={(list) =>
+                    setQuoteSummary({
+                      accepted: list.filter((q) => q.status === "ACCEPTED").reduce((s, q) => s + Number(q.totalAmount), 0),
+                      pending: list.filter((q) => q.status === "PENDING").length,
+                    })
+                }
               />
             )}
             {(detail.status === "MATCHED" || detail.status === "ON_THE_WAY" || detail.status === "IN_PROGRESS") && (
@@ -148,7 +150,7 @@ export function OrderDetailModal({ orderId, onClose, onChanged }) {
       <Modal.Footer>
         <Button variant="light" onClick={onClose}>Đóng</Button>
         {next && (
-          <Button variant="dark" onClick={advance} disabled={saving}>
+            <Button variant="dark" onClick={advance} disabled={saving || (completing && quoteSummary.accepted <= 0)}>
             {saving ? "Đang cập nhật..." : next.label}
           </Button>
         )}

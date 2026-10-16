@@ -140,14 +140,9 @@ export async function getWorkerRequestDetail(requestId) {
 /**
  * @param {number} requestId
  * @param {"ON_THE_WAY"|"IN_PROGRESS"|"COMPLETED"} status
- * @param {number} [finalPrice]
  */
-export async function updateRequestStatus(requestId, status, finalPrice) {
-  const body = { status };
-  if (status === "COMPLETED" && finalPrice != null && finalPrice !== "") {
-    body.finalPrice = Number(finalPrice);
-  }
-  return axiosClient.patch(`/worker/requests/${requestId}/status`, body);
+export async function updateRequestStatus(requestId, status) {
+  return axiosClient.patch(`/worker/requests/${requestId}/status`, { status });
 }
 
 export const registerWorker = registerWorkerProfile;
