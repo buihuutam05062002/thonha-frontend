@@ -1,3 +1,4 @@
+import {useEffect, useRef, useState} from 'react';
 import {Routes, Route, Link, useNavigate, useParams, Navigate} from 'react-router-dom';
 import CreateRequestPage from '../../pages/customer/CreateRequestPage.jsx';
 import ProfilePage from '../../pages/customer/ProfilePage.jsx';
@@ -6,23 +7,53 @@ import MyRequestsPage from '../../pages/customer/MyRequestsPage.jsx';
 import RequireAuth from '../../auth/RequireAuth.jsx';
 import {useAuth} from '../../auth/useAuth';
 import logoImg from '../../assets/logo.png';
-import {ArrowRight, Zap, Droplet, Snowflake, Wrench, Settings, Copyright} from 'lucide-react';
+import {ArrowRight, Zap, Droplet, Snowflake, Wrench, Settings, Copyright, Menu, X} from 'lucide-react';
 
 function CustomerHeader({user}) {
     const nav = useNavigate();
     const {logout} = useAuth();
+    // Màn nhỏ: các liên kết gom vào menu bấm mở (nút ☰) thay vì bị ẩn đi
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef(null);
+
     const signOut = async () => {
         await logout();
         nav('/auth', {replace: true});
     };
 
-    return <header className="customer-navbar">
+    // Đóng menu khi bấm Esc hoặc bấm ra ngoài thanh menu
+    useEffect(() => {
+        if (!open) return undefined;
+        const onKey = (e) => {
+            if (e.key === 'Escape') setOpen(false);
+        };
+        const onDown = (e) => {
+            if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('mousedown', onDown);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('mousedown', onDown);
+        };
+    }, [open]);
+
+    // Bấm vào bất kỳ liên kết/nút nào trong menu thì đóng menu lại
+    const closeOnItem = (e) => {
+        if (e.target.closest('a, button')) setOpen(false);
+    };
+
+    return <header className="customer-navbar" ref={rootRef}>
         <div className="customer-navbar-inner">
             <Link className="customer-brand" to="/">
                 <img src={logoImg} alt="Thợ Nhà"/>
                 <div><strong>Thợ Nhà</strong><span>Sửa chữa tại nhà</span></div>
             </Link>
-            <nav className="customer-nav">
+            <button type="button" className="customer-menu-toggle" aria-expanded={open} aria-controls="customer-nav"
+                    aria-label={open ? 'Đóng menu' : 'Mở menu'} onClick={() => setOpen((o) => !o)}>
+                {open ? <X size={22} aria-hidden="true"/> : <Menu size={22} aria-hidden="true"/>}
+            </button>
+            <nav id="customer-nav" className={`customer-nav${open ? ' open' : ''}`} onClick={closeOnItem}>
                 <Link to="/">Trang chủ</Link>
                 <a href="#services">Dịch vụ</a>
                 <a href="#process">Cách hoạt động</a>
