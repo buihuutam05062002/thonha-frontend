@@ -45,6 +45,7 @@ export default function WorkerDashboard() {
   const [toggling, setToggling] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [walletTick, setWalletTick] = useState(0);
   const [toggleError, setToggleError] = useState(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -56,7 +57,7 @@ export default function WorkerDashboard() {
   const [respondError, setRespondError] = useState(null);
   const mounted = useRef(true);
 
-  // đặt lại true khi mount: React.StrictMode (dev) chạy mount -> cleanup -> mount
+
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -65,17 +66,17 @@ export default function WorkerDashboard() {
   useEffect(() => {
     let cancelled = false;
     getMyWorkerProfile()
-      .then((data) => {
-        if (cancelled) return;
-        if (!data) navigate("/worker/register", { replace: true });
-        else setProfile(data);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setLoadError(parseApiError(err).message || "Không tải được hồ sơ, vui lòng tải lại trang.");
-        }
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+        .then((data) => {
+          if (cancelled) return;
+          if (!data) navigate("/worker/register", { replace: true });
+          else setProfile(data);
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setLoadError(parseApiError(err).message || "Không tải được hồ sơ, vui lòng tải lại trang.");
+          }
+        })
+        .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [navigate]);
 
@@ -92,17 +93,17 @@ export default function WorkerDashboard() {
     }
   }, []);
 
-  // Tải lại hồ sơ (trạng thái sẵn sàng, số đơn đang làm có thể đổi khi nhận/hủy đơn)
+
   const refreshProfile = useCallback(() => {
     getMyWorkerProfile()
-      .then((fresh) => { if (fresh && mounted.current) setProfile(fresh); })
-      .catch(() => {});
+        .then((fresh) => { if (fresh && mounted.current) setProfile(fresh); })
+        .catch(() => {});
   }, []);
 
-  // ---- Realtime: backend đẩy sự kiện qua WebSocket, FE chỉ cần tải lại dashboard ----
+
   const refreshTimer = useRef(null);
   const handleSocketMessage = useCallback(() => {
-    // gộp nhiều sự kiện đến liên tiếp (vd: mời 1 lúc nhiều thợ) thành 1 lần tải
+
     clearTimeout(refreshTimer.current);
     refreshTimer.current = setTimeout(() => { loadDashboard(); refreshProfile(); }, 300);
   }, [loadDashboard, refreshProfile]);
@@ -110,16 +111,16 @@ export default function WorkerDashboard() {
 
   const userId = authUser?.id;
 
-  // Kết quả xét duyệt hồ sơ (duyệt / từ chối / thu hồi): tải lại hồ sơ để đổi màn hình ngay
+
   const handleAccountMessage = refreshProfile;
   const accountConnected = useUserTopics(profile ? userId : null, ["account"], handleAccountMessage);
-  // bù sự kiện bị lỡ khi mất kết nối (vd: được duyệt lúc thợ đang offline/đổi mạng)
+
   useEffect(() => {
     if (accountConnected) handleAccountMessage();
   }, [accountConnected, handleAccountMessage]);
   const wsConnected = useUserTopics(approved ? userId : null, ["matching"], handleSocketMessage);
 
-  // tải lần đầu + khi người dùng quay lại tab
+
   useEffect(() => {
     if (!approved) return undefined;
     loadDashboard();
@@ -128,12 +129,12 @@ export default function WorkerDashboard() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [approved, loadDashboard]);
 
-  // mỗi lần (kết nối lại) WebSocket thành công: tải lại để bù các sự kiện bị lỡ lúc mất mạng
+
   useEffect(() => {
     if (approved && wsConnected) loadDashboard();
   }, [approved, wsConnected, loadDashboard]);
 
-  // dự phòng: chỉ polling khi WebSocket đang không kết nối được
+
   useEffect(() => {
     if (!approved || wsConnected) return undefined;
     const id = setInterval(() => {
@@ -142,10 +143,10 @@ export default function WorkerDashboard() {
     return () => clearInterval(id);
   }, [approved, wsConnected, loadDashboard]);
 
-  // Thợ đang sẵn sàng: lấy GPS ngay rồi gửi định kỳ để hệ thống ghép đơn gần nhất.
-  // Lưu ý: trình duyệt chỉ gửi được khi tab còn mở.
+
+
   const availability = profile?.availabilityStatus;
-  // Thợ có đơn đang làm vẫn phải gửi vị trí dù BUSY/OFFLINE: khách cần thấy thợ đang tới
+
   const hasOngoing = (profile?.ongoingJobsCount ?? 0) > 0;
   const onTheWay = (dashboard?.activeOrders ?? []).some((o) => o.status === "ON_THE_WAY");
   useEffect(() => {
@@ -163,7 +164,7 @@ export default function WorkerDashboard() {
       } catch (err) {
         if (!stopped) {
           setLocationError(
-            parseApiError(err).message || err.message || "Không cập nhật được vị trí của bạn"
+              parseApiError(err).message || err.message || "Không cập nhật được vị trí của bạn"
           );
         }
       }
@@ -197,29 +198,29 @@ export default function WorkerDashboard() {
     setRespondError(null);
     try {
       await respondToMatching(req.requestId, req.matchingLogId, result);
-      const fresh = await getMyWorkerProfile().catch(() => null); // trạng thái/ số đơn có thể đổi
+      const fresh = await getMyWorkerProfile().catch(() => null);
       if (fresh && mounted.current) setProfile(fresh);
     } catch (err) {
       setRespondError(parseApiError(err).message || "Không thể gửi phản hồi, vui lòng thử lại.");
     } finally {
       if (mounted.current) setBusyId(null);
-      loadDashboard(); // yêu cầu có thể đã hết hạn hoặc thợ khác đã nhận
+      loadDashboard();
     }
   };
 
   if (loading) {
     return (
-      <div className="d-flex min-vh-100 align-items-center justify-content-center">
-        <Spinner animation="border" style={{ color: "#F5820D" }} />
-      </div>
+        <div className="d-flex min-vh-100 align-items-center justify-content-center">
+          <Spinner animation="border" style={{ color: "#F5820D" }} />
+        </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="d-flex min-vh-100 align-items-center justify-content-center p-3">
-        <p className="text-danger mb-0">{loadError}</p>
-      </div>
+        <div className="d-flex min-vh-100 align-items-center justify-content-center p-3">
+          <p className="text-danger mb-0">{loadError}</p>
+        </div>
     );
   }
 
@@ -227,11 +228,11 @@ export default function WorkerDashboard() {
 
   if (!approved) {
     return (
-      <ApprovalPending
-        status={profile.approvalStatus}
-        reason={profile.rejectReason}
-        onResubmit={() => navigate("/worker/register", { state: { resubmitProfile: profile } })}
-      />
+        <ApprovalPending
+            status={profile.approvalStatus}
+            reason={profile.rejectReason}
+            onResubmit={() => navigate("/worker/register", { state: { resubmitProfile: profile } })}
+        />
     );
   }
 
@@ -245,69 +246,69 @@ export default function WorkerDashboard() {
   const toggleNotif = () => setNotifOpen((v) => !v);
 
   return (
-    <div className="d-flex min-vh-100 bg-light">
-      <Sidebar user={user} pendingCount={incoming.length} onOpenNotif={toggleNotif} />
+      <div className="d-flex min-vh-100 bg-light">
+        <Sidebar user={user} pendingCount={incoming.length} onOpenNotif={toggleNotif} />
 
-      <div className="flex-grow-1 d-flex flex-column min-width-0">
-        <HeaderDashboard onToggleNotif={toggleNotif} pendingCount={incoming.length} />
+        <div className="flex-grow-1 d-flex flex-column min-width-0">
+          <HeaderDashboard onToggleNotif={toggleNotif} pendingCount={incoming.length} />
 
-        <main className="flex-grow-1 p-3 p-lg-4 pb-5">
-          <Container fluid="lg" style={{ maxWidth: "900px" }}>
-            {locationError && (
-              <div className="alert alert-warning small" role="alert">
-                Chưa lấy được vị trí của bạn nên hệ thống chưa thể giao đơn gần bạn. {locationError}
-              </div>
-            )}
+          <main className="flex-grow-1 p-3 p-lg-4 pb-5">
+            <Container fluid="lg" style={{ maxWidth: "900px" }}>
+              {locationError && (
+                  <div className="alert alert-warning small" role="alert">
+                    Chưa lấy được vị trí của bạn nên hệ thống chưa thể giao đơn gần bạn. {locationError}
+                  </div>
+              )}
 
-            <ActiveStatusCard
-              status={profile.availabilityStatus}
-              ongoingJobs={profile.ongoingJobsCount ?? 0}
-              loading={toggling}
-              error={toggleError}
-              onToggle={handleToggle}
+              <ActiveStatusCard
+                  status={profile.availabilityStatus}
+                  ongoingJobs={profile.ongoingJobsCount ?? 0}
+                  loading={toggling}
+                  error={toggleError}
+                  onToggle={handleToggle}
+              />
+
+              {dashError && !dashboard && (
+                  <div className="alert alert-danger small" role="alert">
+                    {dashError}{" "}
+                    <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={loadDashboard}>Thử lại</button>
+                  </div>
+              )}
+
+              {!dashboard && !dashError && (
+                  <div className="text-center py-5"><Spinner animation="border" style={{ color: "#F5820D" }} /></div>
+              )}
+
+              {dashboard && (
+                  <>
+                    <WalletCard refreshKey={dashboard} tick={walletTick} onOpen={() => setWalletOpen(true)} />
+                    <IncomingRequests requests={incoming} busyId={busyId} error={respondError} onRespond={handleRespond} />
+                    <ActiveOrders orders={activeOrders} onSelect={setSelectedOrderId} />
+                    <OverviewStats summary={dashboard.summary} />
+                    <WeeklyIncome data={dashboard.weeklyIncome} total={dashboard.summary.incomeWeek} />
+                    <RecentOrders orders={orders} onSelect={setSelectedOrderId} />
+                    <QuickMenu onOpenSchedule={() => setScheduleOpen(true)} onOpenWallet={() => setWalletOpen(true)} onOpenEarnings={() => navigate("/worker/earnings")} />
+                  </>
+              )}
+            </Container>
+          </main>
+        </div>
+
+        <BottomNav pendingCount={incoming.length} onOpenNotif={toggleNotif} />
+
+        {selectedOrderId != null && (
+            <OrderDetailModal
+                orderId={selectedOrderId}
+                onClose={() => setSelectedOrderId(null)}
+                onChanged={() => { loadDashboard(); refreshProfile(); }}
             />
+        )}
 
-            {dashError && !dashboard && (
-              <div className="alert alert-danger small" role="alert">
-                {dashError}{" "}
-                <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={loadDashboard}>Thử lại</button>
-              </div>
-            )}
+        {scheduleOpen && <ScheduleModal onClose={() => setScheduleOpen(false)} />}
 
-            {!dashboard && !dashError && (
-              <div className="text-center py-5"><Spinner animation="border" style={{ color: "#F5820D" }} /></div>
-            )}
+        {walletOpen && <WalletModal onClose={() => { setWalletOpen(false); setWalletTick((n) => n + 1); }} onChanged={() => setWalletTick((n) => n + 1)} />}
 
-            {dashboard && (
-              <>
-                <WalletCard refreshKey={dashboard} onOpen={() => setWalletOpen(true)} />
-                <IncomingRequests requests={incoming} busyId={busyId} error={respondError} onRespond={handleRespond} />
-                <ActiveOrders orders={activeOrders} onSelect={setSelectedOrderId} />
-                <OverviewStats summary={dashboard.summary} />
-                <WeeklyIncome data={dashboard.weeklyIncome} total={dashboard.summary.incomeWeek} />
-                <RecentOrders orders={orders} onSelect={setSelectedOrderId} />
-                <QuickMenu onOpenSchedule={() => setScheduleOpen(true)} onOpenWallet={() => setWalletOpen(true)} onOpenEarnings={() => navigate("/worker/earnings")} />
-              </>
-            )}
-          </Container>
-        </main>
+        {notifOpen && <NotificationDropdown incoming={incoming} orders={orders} onClose={() => setNotifOpen(false)} />}
       </div>
-
-      <BottomNav pendingCount={incoming.length} onOpenNotif={toggleNotif} />
-
-      {selectedOrderId != null && (
-        <OrderDetailModal
-          orderId={selectedOrderId}
-          onClose={() => setSelectedOrderId(null)}
-          onChanged={() => { loadDashboard(); refreshProfile(); }}
-        />
-      )}
-
-      {scheduleOpen && <ScheduleModal onClose={() => setScheduleOpen(false)} />}
-
-      {walletOpen && <WalletModal onClose={() => setWalletOpen(false)} />}
-
-      {notifOpen && <NotificationDropdown incoming={incoming} orders={orders} onClose={() => setNotifOpen(false)} />}
-    </div>
   );
 }

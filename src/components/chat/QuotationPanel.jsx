@@ -93,7 +93,9 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
         });
     }
 
-    // khách chưa nhận được báo giá nào thì không cần hiện khung
+    const accepted = list.filter((q) => q.status === 'ACCEPTED');
+    const acceptedTotal = accepted.reduce((s, q) => s + Number(q.totalAmount), 0);
+
     if (role === 'customer' && list.length === 0 && !loadError) return null;
 
     return (
@@ -117,7 +119,7 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
                             style={{border: 0, borderRadius: 8, background: ACCENT, color: '#fff', padding: '9px 12px', fontWeight: 600, cursor: 'pointer', opacity: busy || !amount ? 0.5 : 1}}>
                         {busy ? 'Đang gửi...' : 'Gửi báo giá cho khách'}
                     </button>
-                    <span style={{fontSize: 12, color: '#6b7280'}}>Gửi báo giá mới sẽ thay thế báo giá đang chờ khách phản hồi.</span>
+                    <span style={{fontSize: 12, color: '#6b7280'}}>Mỗi báo giá được khách chấp nhận sẽ được cộng dồn vào tổng chi phí của đơn.</span>
                 </form>
             )}
             {role === 'worker' && !active && list.length === 0 && (
@@ -125,6 +127,13 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
             )}
 
             {error && <div style={{color: '#b42318', fontSize: 13, margin: '6px 0'}}>{error}</div>}
+
+            {accepted.length > 0 && (
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ecfdf3', color: '#067647', borderRadius: 8, padding: '8px 10px', fontSize: 14, marginBottom: 10}}>
+                    <span>Tổng đã chấp nhận ({accepted.length} báo giá)</span>
+                    <b>{formatVnd(acceptedTotal)}</b>
+                </div>
+            )}
 
             <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
                 {list.map((q) => {

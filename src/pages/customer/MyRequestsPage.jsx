@@ -49,7 +49,6 @@ export default function MyRequestsPage() {
     const [page, setPage] = useState(0);
 
     const [data, setData] = useState(null); 
-    const [loading, setLoading] = useState(true);
     const [loadedKey, setLoadedKey] = useState(null);
 
 
