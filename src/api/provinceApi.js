@@ -1,16 +1,12 @@
 import axios from "axios";
 
-
-const callApi = "https://provinces.open-api.vn/api/v2"
-
 const axiosProvince = axios.create({
-  baseURL: callApi,
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "https://provinces.open-api.vn/api/v2",
+  timeout: 15000,
 });
 
-export async function getProvinces(){
-    return axiosProvince.get()
+export async function getProvinces() {
+  const { data } = await axiosProvince.get("/p/");
+  return Array.isArray(data) ? data.map((p) => p?.name).filter(Boolean) : [];
 }
+ 

@@ -23,8 +23,16 @@ export function RegisterWorkerProfileForm({ initialValues, onNext }) {
   const [categories, setCategories] = useState([]);
   const [loadingCategory, setLoadingCategory] = useState(true);
   const [formError, setFormError] = useState(null);
+  const [provinces, setProvinces] = useState([]);
 
   useEffect(() => {
+    getProvinces()
+      .then(setProvinces)
+      .catch(() =>
+        setFormError(
+          "Không tải được danh sách tỉnh/thành phố. Vui lòng tải lại trang.",
+        ),
+      );
     
     getCategories()
       .then((data) => setCategories(Array.isArray(data) ? data : []))
@@ -50,6 +58,11 @@ export function RegisterWorkerProfileForm({ initialValues, onNext }) {
     },
   });
 
+  // Nộp lại hồ sơ: giá trị cũ có thể không còn trong danh sách -> thêm vào để ô chọn vẫn hiển thị đúng
+  const current = formik.values.provinceCity;
+  const provinceOptions =
+    current && !provinces.includes(current) ? [current, ...provinces] : provinces;
+
   const toggleCategory = (id) => {
     const current = formik.values.categoryIds;
     const next = current.includes(id)
@@ -74,7 +87,7 @@ export function RegisterWorkerProfileForm({ initialValues, onNext }) {
         <SelectField
           label="Tỉnh/ Thành phố đang sinh sống"
           name="provinceCity"
-          options={PROVINCES}
+          options={provinceOptions}
           value={formik.values.provinceCity}
           onChange={(v) => formik.setFieldValue("provinceCity", v)}
           onBlur={formik.handleBlur}
