@@ -1,15 +1,6 @@
 import {Component} from "react";
 
-/**
- * Bắt lỗi render của cây con để một component hỏng không làm trắng cả trang.
- *
- * Lưu ý: ErrorBoundary chỉ bắt lỗi xảy ra lúc render / lifecycle. Lỗi trong event handler,
- * setTimeout hay promise (vd gọi API) KHÔNG đi qua đây — những lỗi đó vẫn xử lý bằng try/catch + toast.
- *
- * Props:
- *  - resetKeys: mảng giá trị; khi một giá trị đổi (vd pathname) thì tự thoát khỏi trạng thái lỗi.
- *  - fallback: (error, reset) => ReactNode, mặc định là FallbackScreen.
- */
+
 export default class ErrorBoundary extends Component {
     state = {error: null};
 
@@ -18,7 +9,6 @@ export default class ErrorBoundary extends Component {
     }
 
     componentDidCatch(error, info) {
-        // Chỗ này gắn Sentry / log server khi có: Sentry.captureException(error, {extra: info})
         console.error("[ErrorBoundary]", error, info?.componentStack);
     }
 
