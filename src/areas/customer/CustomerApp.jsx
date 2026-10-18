@@ -8,6 +8,8 @@ import RequireAuth from '../../auth/RequireAuth.jsx';
 import {useAuth} from '../../auth/useAuth';
 import logoImg from '../../assets/logo.png';
 import {ArrowRight, Zap, Droplet, Snowflake, Wrench, Settings, Copyright, Menu, X} from 'lucide-react';
+import DashboardPage from '../../pages/customer/DashboardPage.jsx';
+
 
 function CustomerHeader({user}) {
     const nav = useNavigate();
@@ -54,16 +56,18 @@ function CustomerHeader({user}) {
                 {open ? <X size={22} aria-hidden="true"/> : <Menu size={22} aria-hidden="true"/>}
             </button>
             <nav id="customer-nav" className={`customer-nav${open ? ' open' : ''}`} onClick={closeOnItem}>
-                <Link to="/">Trang chủ</Link>
-                <a href="#services">Dịch vụ</a>
-                <a href="#process">Cách hoạt động</a>
                 {user ? <>
+                    <Link to="/dashboard">Tổng quan</Link>
                     <Link to="/requests">Yêu cầu của tôi</Link>
                     <Link to="/profile">Hồ sơ</Link>
-                    <Link to={user.roles?.includes('WORKER') ? '/worker/dashboard' : '/worker'}>Khu vực thợ</Link>
+                    {user.roles?.includes('WORKER') && <Link to="/worker/dashboard">Khu vực thợ</Link>}
                     <button className="customer-primary" onClick={() => nav('/create')}>Tạo yêu cầu</button>
                     <button className="customer-login" onClick={signOut}>Đăng xuất</button>
-                </> : <Link className="customer-login" to="/auth">Đăng nhập</Link>}
+                </> : <>
+                    <a href="#services">Dịch vụ</a>
+                    <a href="#process">Cách hoạt động</a>
+                    <Link className="customer-login" to="/auth">Đăng nhập</Link>
+                </>}
             </nav>
         </div>
     </header>;
@@ -156,6 +160,7 @@ export default function CustomerApp() {
     return <CustomerRoute><Routes>
         <Route index element={<Landing/>}/>
         <Route element={<RequireAuth/>}>
+            <Route path="dashboard" element={<DashboardPage/>}/>
             <Route path="create" element={<CreateRequestPage/>}/>
             <Route path="profile" element={<ProfileRoute/>}/>
             <Route path="requests" element={<MyRequestsPage/>}/>

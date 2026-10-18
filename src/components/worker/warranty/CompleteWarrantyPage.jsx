@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, Camera, X, ShieldCheck } from "lucide-react";
 import { parseApiError } from "../../../api/apiError";
+import { notifySuccess } from "../../../utils/notify";
 import { completeWarranty, getWarranty } from "../../../api/warrantyApi";
 import { useNavigate, useParams } from "react-router-dom";
 import { RESOLUTION_OPTIONS } from "./warrantyFormat";
@@ -71,6 +72,7 @@ const CompleteWarrantyPage = () => {
         { reasonType, resolutionText },
         images.map((img) => img.file),
       );
+      notifySuccess("Đã hoàn thành bảo hành.");
       navigate("/worker/warranty", { replace: true });
     } catch (err) {
       setError(

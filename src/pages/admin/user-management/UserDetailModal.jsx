@@ -1,7 +1,7 @@
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchUserById, ROLES, USER_STATUSES } from "../../../api/userApi";
 import { formatDateTime } from "../../../utils/format";
+import { Empty, Modal } from "../../../components/admin/ui";
 
 const roleLabel = (v) => ROLES.find((r) => r.value === v)?.label ?? v;
 const statusLabel = (v) => USER_STATUSES.find((s) => s.value === v)?.label ?? v;
@@ -22,12 +22,6 @@ export default function UserDetailModal({ userId, onClose }) {
     };
   }, [userId]);
 
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const rows = user && [
     ["Mã người dùng", user.id],
     ["Họ tên", user.fullName],
@@ -41,35 +35,22 @@ export default function UserDetailModal({ userId, onClose }) {
   ];
 
   return (
-    <div className="um-modal-backdrop" onClick={onClose}>
-      <div
-        className="um-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="um-modal-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="um-modal-header">
-          <h2 id="um-modal-title">Chi tiết người dùng</h2>
-          <button className="um-modal-close" onClick={onClose} aria-label="Đóng"><X size={22} aria-hidden="true" /></button>
-        </header>
-
-        {!user && !error && <p className="um-empty">Đang tải...</p>}
-        {error && <p className="um-empty um-error">{error}</p>}
-        {user && (
-          <div className="um-detail">
-            {user.avatarUrl && <img className="um-avatar" src={user.avatarUrl} alt={user.fullName} />}
-            <dl>
-              {rows.map(([label, value]) => (
-                <div key={label} className="um-detail-row">
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
-      </div>
-    </div>
+    <Modal title="Chi tiết người dùng" onClose={onClose}>
+      {!user && !error && <Empty className="py-6">Đang tải...</Empty>}
+      {error && <Empty error className="py-6">{error}</Empty>}
+      {user && (
+        <div>
+          {user.avatarUrl && <img className="mx-auto mb-12px block h-20 w-20 rounded-full object-cover" src={user.avatarUrl} alt={user.fullName} />}
+          <dl className="m-0">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex gap-12px border-b border-line py-2 text-sm max-[560px]:flex-col max-[560px]:gap-0.5">
+                <dt className="shrink-0 basis-[140px] font-normal text-subtle max-[560px]:basis-auto">{label}</dt>
+                <dd className="m-0 min-w-0 flex-1 break-words text-ink">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+    </Modal>
   );
 }

@@ -9,8 +9,7 @@ import { getProvinces } from "../../../api/provinceApi";
 
 
 
-const rr = await getProvinces();
-const PROVINCES =  rr.data.map(province => province.name);
+
 
 const WORK_AREAS = [
   "Nội thành / Trung tâm",
@@ -26,6 +25,7 @@ export function RegisterWorkerProfileForm({ initialValues, onNext }) {
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
+    
     getCategories()
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() =>

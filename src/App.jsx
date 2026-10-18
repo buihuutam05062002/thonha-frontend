@@ -5,6 +5,7 @@ import AdminArea from "./areas/admin/AdminArea.jsx";
 import AuthPage from "./pages/auth/AuthPage.jsx";
 import { useAuth } from "./auth/useAuth";
 import ConfirmProvider from "./components/ui/confirm/ConfirmProvider.jsx";
+import ErrorBoundary from "./components/error/ErrorBoundary.jsx";
 
 function AuthRoute() {
   const { isAuthenticated } = useAuth();
@@ -19,17 +20,25 @@ function AuthRoute() {
   return <AuthPage />;
 }
 
+// Bắt lỗi render theo từng trang; đổi route thì tự thoát khỏi trạng thái lỗi.
+function RouteErrorBoundary({ children }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary resetKeys={[pathname]}>{children}</ErrorBoundary>;
+}
+
 export default function App() {
 
   return (
     <ConfirmProvider>
       <BrowserRouter>
+        <RouteErrorBoundary>
         <Routes>
           <Route path="/auth" element={<AuthRoute />} />
           <Route path="/worker/*" element={<WorkerArea />} />
           <Route path="/admin/*" element={<AdminArea />} />
           <Route path="/*" element={<CustomerApp />} />
         </Routes>
+        </RouteErrorBoundary>
       </BrowserRouter>
     </ConfirmProvider>
   );

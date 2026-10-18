@@ -14,17 +14,3 @@ const axiosProvince = axios.create({
 export async function getProvinces(){
     return axiosProvince.get()
 }
-
-// console.log( await getProvinces())
-
-
-async function test(){
-    const response = await axiosProvince.get();
-    return response.data;
-}
-console.log(await test())
-
-
-// const name =  await getProvinces().;
-
-// console.log(await getProvinces())

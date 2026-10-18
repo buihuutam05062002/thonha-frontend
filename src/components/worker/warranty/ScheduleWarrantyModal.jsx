@@ -3,6 +3,7 @@ import { Navigation, Send, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { acceptWarranty, getWarranty } from "../../../api/warrantyApi";
 import { parseApiError } from "../../../api/apiError";
+import { notifySuccess } from "../../../utils/notify";
 import { TIME_SLOTS, todayLocal } from "./warrantyFormat";
 
 const ScheduleWarrantyModal = () => {
@@ -53,6 +54,7 @@ const ScheduleWarrantyModal = () => {
     setError(null);
     try {
       await acceptWarranty(claimId, { appointmentDate, appointmentTime, note });
+      notifySuccess("Đã nhận bảo hành và hẹn lịch với khách.");
       navigate(`/worker/warranty/${claimId}`, { replace: true });
     } catch (err) {
       setError(

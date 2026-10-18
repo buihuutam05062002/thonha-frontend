@@ -49,3 +49,16 @@ export const PRIORITY_LABELS = {
     HIGH: 'Cao',
     URGENT: 'Khẩn cấp',
 };
+export const WARRANTY_LABELS = {
+    PENDING: 'Chờ tiếp nhận',
+    PROCESSING: 'Đang xử lý',
+    COMPLETED: 'Đã hoàn thành',
+    REJECTED: 'Đã từ chối',
+};
+
+export const WARRANTY_TONE = {
+    PENDING: 'wait',
+    PROCESSING: 'active',
+    COMPLETED: 'done',
+    REJECTED: 'bad',
+};

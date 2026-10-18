@@ -11,6 +11,8 @@ import {useAuth} from '../../auth/useAuth';
 import {useConfirm} from '../ui/confirm/confirmContext';
 import {useUserTopics} from '../../hooks/useUserTopics';
 import {formatVnd} from '../../utils/format';
+import WarrantyClaimForm from './WarrantyClaimForm';
+import {notifySuccess} from '../../utils/notify';
 
 const ACCENT = '#F5820D';
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('vi-VN', {hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'}) : '');
@@ -65,11 +67,12 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
         if (connected) load(); // bù sự kiện bị lỡ khi mất mạng
     }, [connected, load]);
 
-    async function run(fn) {
+    async function run(fn, okMessage) {
         setBusy(true);
         setError('');
         try {
             await fn();
+            if (okMessage) notifySuccess(okMessage);
             await load();
         } catch (e) {
             setError(e.message);
@@ -90,7 +93,7 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
             await createQuotation(requestId, value, note);
             setAmount('');
             setNote('');
-        });
+        }, 'Đã gửi báo giá cho khách.');
     }
 
     const accepted = list.filter((q) => q.status === 'ACCEPTED');
@@ -147,24 +150,36 @@ export default function QuotationPanel({requestId, role, active = true, onLoaded
                                 </span>
                             </div>
                             {q.note && <div style={{fontSize: 13, margin: '6px 0 0', whiteSpace: 'pre-wrap'}}>{q.note}</div>}
+                            {q.status === 'ACCEPTED' && q.warrantyDays > 0 && (
+                                <div style={{fontSize: 12, color: q.warrantyActive || q.warrantyUsed ? '#067647' : '#6b7280', marginTop: 4}}>
+                                    {q.warrantyUsed
+                                        ? 'Đã gửi yêu cầu bảo hành cho hạng mục này'
+                                        : q.warrantyActive
+                                            ? `${q.warrantyLabel} · hết hạn ${new Date(q.warrantyExpiresAt).toLocaleDateString('vi-VN')}`
+                                            : 'Đã hết hạn bảo hành'}
+                                </div>
+                            )}
                             <div style={{fontSize: 11, color: '#9ca3af', marginTop: 4}}>
                                 {role === 'customer' ? `Thợ ${q.workerName} | ` : ''}{fmt(q.createdAt)}
                             </div>
                             {role === 'customer' && q.actionable && (
                                 <div style={{display: 'flex', gap: 8, marginTop: 8}}>
-                                    <button type="button" disabled={busy} onClick={() => run(() => acceptQuotation(q.id))}
+                                    <button type="button" disabled={busy} onClick={() => run(() => acceptQuotation(q.id), 'Đã chấp nhận báo giá.')}
                                             style={{flex: 1, border: 0, borderRadius: 8, background: ACCENT, color: '#fff', padding: '8px 10px', fontWeight: 600, cursor: 'pointer'}}>
                                         Chấp nhận
                                     </button>
                                     <button type="button" disabled={busy}
                                             onClick={async () => {
                                                 const ok = await confirm({title: 'Từ chối báo giá?', message: 'Thợ sẽ được thông báo là bạn từ chối báo giá này.', confirmText: 'Từ chối', danger: true});
-                                                if (ok) run(() => rejectQuotation(q.id));
+                                                if (ok) run(() => rejectQuotation(q.id), 'Đã từ chối báo giá.');
                                             }}
                                             style={{flex: 1, border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', padding: '8px 10px', cursor: 'pointer'}}>
                                         Từ chối
                                     </button>
                                 </div>
+                            )}
+                            {role === 'customer' && q.claimable && (
+                                <WarrantyClaimForm requestId={requestId} quotation={q} onDone={load}/>
                             )}
                         </div>
                     );

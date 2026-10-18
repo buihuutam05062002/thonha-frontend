@@ -6,6 +6,8 @@ import WorkerApprovalPage from "../../pages/admin/worker-approval/WorkerApproval
 import WalletManagementPage from "../../pages/admin/wallets/WalletManagementPage";
 import CommissionPage from "../../pages/admin/commissions/CommissionPage";
 import ComplaintPage from "../../pages/admin/complaints/ComplaintPage";
+import OverviewPage from "../../pages/admin/overview/OverviewPage";
+import CategoryPage from "../../pages/admin/categories/CategoryPage";
 import StatisticsPage from "../../pages/admin/statistics/StatisticsPage";
 
 export default function AdminArea() {
@@ -13,7 +15,9 @@ export default function AdminArea() {
     <Routes>
       <Route element={<RequireAuth roles={["ADMIN"]} />}>
         <Route element={<AdminLayout />}>
-          <Route index element={<Navigate to="profiles" replace />} />
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="categories" element={<CategoryPage />} />
           <Route path="profiles" element={<WorkerApprovalPage />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="wallets" element={<WalletManagementPage />} />

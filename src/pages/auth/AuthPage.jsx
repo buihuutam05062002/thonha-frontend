@@ -89,14 +89,14 @@ export default function AuthPage({onAuthenticated}) {
                     {mode === 'register' && <><label className="label">Họ và tên<input className="input"
                                                                                        value={form.fullName}
                                                                                        onChange={e => change('fullName', e.target.value)}
-                                                                                       placeholder="Nguyễn Văn A"
+                                                                                       placeholder=""
                                                                                        required/></label><label
                         className="label">Email<input className="input" type="email" value={form.email}
                                                       onChange={e => change('email', e.target.value)}
-                                                      placeholder="ban@example.com"/></label><label className="label">Số
+                                                      placeholder=""/></label><label className="label">Số
                         điện thoại<input className="input" value={form.phoneNumber}
                                          onChange={e => change('phoneNumber', e.target.value)}
-                                         placeholder="0901234567"/></label></>}
+                                         placeholder=""/></label></>}
                     {mode === 'login' &&
                         <label className="label">Email hoặc số điện thoại<input className="input" value={form.account}
                                                                                 onChange={e => change('account', e.target.value)}

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Info, Pencil, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Info, Pencil } from "lucide-react";
+import { notify as showNotice } from "../../../utils/notify";
 import { fetchCommissionOverview, saveCommissionPolicy } from "../../../api/commissionApi";
 import { getCategories } from "../../../api/categoryApi";
 import { formatDateTime, formatPercent } from "../../../utils/format";
 
-/** Nhận "12.5" hoặc "12,5". Backend: 0..100, tối đa 2 chữ số thập phân. */
 function parseRate(text) {
   const t = String(text ?? "").trim().replace(",", ".");
   if (!/^\d{1,3}(\.\d{1,2})?$/.test(t)) {
@@ -20,15 +20,6 @@ export default function CommissionPolicies() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState(null);
-  const noticeTimer = useRef(null);
-
-  const showNotice = (type, text) => {
-    setNotice({ type, text });
-    clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 6000);
-  };
-  useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
   const load = useCallback(async () => {
     setError("");
@@ -45,7 +36,6 @@ export default function CommissionPolicies() {
 
   useEffect(() => { load(); }, [load]);
 
-  /** Lưu một chính sách; ném lỗi lên để form hiển thị tại chỗ. */
   const save = async (payload, successText) => {
     await saveCommissionPolicy(payload);
     showNotice("success", successText);
@@ -73,13 +63,6 @@ export default function CommissionPolicies() {
         Thay đổi chỉ áp dụng cho các đơn hoàn thành từ lúc lưu. Đơn đã chốt trước đó giữ nguyên tỷ lệ cũ.
       </p>
 
-      {notice && (
-        <div className={`wa-notice wa-notice-${notice.type}`} role="status">
-          {notice.text}
-          <button type="button" onClick={() => setNotice(null)} aria-label="Đóng thông báo"><X size={18} aria-hidden="true" /></button>
-        </div>
-      )}
-
       <DefaultRateCard overview={overview} onSave={save} />
 
       <div className="cm-card">
@@ -98,7 +81,6 @@ function DefaultRateCard({ overview, onSave }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // đồng bộ lại khi dữ liệu được tải lại từ máy chủ
   useEffect(() => { setText(String(overview.defaultRatePercent)); }, [overview.defaultRatePercent]);
 
   const parsed = parseRate(text);

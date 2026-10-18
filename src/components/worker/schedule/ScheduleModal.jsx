@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Spinner, Button, Form, Badge } from "react-bootstrap";
 import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { parseApiError } from "../../../api/apiError";
+import { notifySuccess } from "../../../utils/notify";
 import { useConfirm } from "../../ui/confirm/confirmContext";
 import {
   SCHEDULE_MAX_DAYS_AHEAD,
@@ -54,11 +55,12 @@ export function ScheduleModal({ onClose }) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function run(fn) {
+  async function run(fn, okMessage) {
     setBusy(true);
     setError(null);
     try {
       await fn();
+      if (okMessage) notifySuccess(okMessage);
       await load();
     } catch (e) {
       setError(parseApiError(e).message || "Có lỗi xảy ra, vui lòng thử lại.");
@@ -69,13 +71,13 @@ export function ScheduleModal({ onClose }) {
 
   const add = (e) => {
     e.preventDefault();
-    run(() => createScheduleSlot({ workDate: form.date, startTime: form.start, endTime: form.end, status: form.status }));
+    run(() => createScheduleSlot({ workDate: form.date, startTime: form.start, endTime: form.end, status: form.status }), "Đã thêm khung giờ.");
   };
-  const dayOff = () => run(() => createScheduleSlot({ workDate: form.date, startTime: "00:00", endTime: "23:59", status: "DAY_OFF" }));
+  const dayOff = () => run(() => createScheduleSlot({ workDate: form.date, startTime: "00:00", endTime: "23:59", status: "DAY_OFF" }), "Đã đặt ngày nghỉ.");
   const toggle = (s) => run(() => updateScheduleSlot(s.id, {
     workDate: s.workDate, startTime: hhmm(s.startTime), endTime: hhmm(s.endTime),
     status: s.status === "AVAILABLE" ? "DAY_OFF" : "AVAILABLE",
-  }));
+  }), "Đã cập nhật khung giờ.");
   const remove = async (s) => {
     const ok = await confirm({
       title: "Xóa khung giờ?",
@@ -83,7 +85,7 @@ export function ScheduleModal({ onClose }) {
       confirmText: "Xóa",
       danger: true,
     });
-    if (ok) run(() => deleteScheduleSlot(s.id));
+    if (ok) run(() => deleteScheduleSlot(s.id), "Đã xóa khung giờ.");
   };
 
   const canPrev = addDays(weekStart, -1) >= startOfWeek(today);

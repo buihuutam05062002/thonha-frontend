@@ -5,6 +5,9 @@ import {saveSession} from '../../api/session';
 import {useAuth} from '../../auth/useAuth';
 import {useConfirm} from '../../components/ui/confirm/confirmContext';
 import {getAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress} from '../../api/addressApi';
+import {notify, notifyError} from '../../utils/notify';
+import {validateWith} from '../../validation/validate';
+import {addressSchema, avatarSchema, profileSchema} from '../../validation/ProfileSchema';
 import {autocompleteAddress, getCurrentPosition, getPlaceDetail, reverseGeocode} from '../../api/mapApi';
 
 const emptyAddress = {label: '', fullAddress: '', lat: '', lng: '', defaultAddress: false};
@@ -19,7 +22,11 @@ export default function ProfilePage({onBack, onLoggedOut}) {
     const [address, setAddress] = useState(emptyAddress);
     const [editingId, setEditingId] = useState(null);
     const [showAddress, setShowAddress] = useState(false);
-    const [error, setError] = useState('');
+    // Lỗi tải trang: giữ trong trang. Lỗi nhập liệu: đặt cạnh ô. Lỗi API khi thao tác: toast.
+    const [loadError, setLoadError] = useState('');
+    const [avatarError, setAvatarError] = useState('');
+    const [nameError, setNameError] = useState('');
+    const [addressErrors, setAddressErrors] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -40,7 +47,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                 setName(u.fullName || '');
                 setAddresses(a);
             } catch (e) {
-                if (mounted) setError(e.message);
+                if (mounted) setLoadError(e.message);
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -52,14 +59,16 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     async function save(e) {
         e.preventDefault();
+        const errs = validateWith(profileSchema, {fullName: name});
+        setNameError(errs.fullName || '');
+        if (errs.fullName) return;
         setSaving(true);
-        setError('');
         try {
-            const u = await updateMe({fullName: name});
+            const u = await updateMe({fullName: name.trim()});
             setUser(u);
             saveSession({user: u});
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         } finally {
             setSaving(false);
         }
@@ -69,22 +78,19 @@ export default function ProfilePage({onBack, onLoggedOut}) {
         const file = e.target.files?.[0];
         e.target.value = '';
         if (!file) return;
-        if (!file.type.startsWith('image/')) {
-            setError('Chỉ chấp nhận file ảnh');
-            return;
-        }
-        if (file.size > MAX_AVATAR_MB * 1024 * 1024) {
-            setError(`Ảnh tối đa ${MAX_AVATAR_MB}MB`);
+        const avatarErr = Object.values(validateWith(avatarSchema(MAX_AVATAR_MB), {type: file.type, size: file.size}))[0];
+        if (avatarErr) {
+            setAvatarError(avatarErr);
             return;
         }
         setUploading(true);
-        setError('');
+        setAvatarError('');
         try {
             const u = await uploadAvatar(file);
             setUser(u);
             saveSession({user: u});
         } catch (err) {
-            setError(err.message);
+            notifyError(err);
         } finally {
             setUploading(false);
         }
@@ -95,7 +101,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
         setAddress(emptyAddress);
         setSuggestions([]);
         setShowAddress(true);
-        setError('');
+        setAddressErrors({});
     }
 
     function openEditAddress(a) {
@@ -109,7 +115,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
         });
         setSuggestions([]);
         setShowAddress(true);
-        setError('');
+        setAddressErrors({});
     }
 
     function closeAddressForm() {
@@ -120,8 +126,10 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     async function submitAddress(e) {
         e.preventDefault();
+        const errs = validateWith(addressSchema, address);
+        setAddressErrors(errs);
+        if (Object.keys(errs).length) return;
         setSaving(true);
-        setError('');
         try {
             const payload = {
                 label: address.label,
@@ -135,7 +143,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
             closeAddressForm();
             setAddresses(await getAddresses());
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         } finally {
             setSaving(false);
         }
@@ -143,6 +151,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     function onAddressType(value) {
         setAddress((a) => ({...a, fullAddress: value, lat: '', lng: ''}));
+        setAddressErrors((errs) => ({...errs, fullAddress: undefined}));
         clearTimeout(debounceRef.current);
         if (value.trim().length < 3) {
             setSuggestions([]);
@@ -165,7 +174,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
             const detail = await getPlaceDetail(s.placeId);
             setAddress((a) => ({...a, lat: detail.lat, lng: detail.lng}));
         } catch {
-            setError('Không lấy được toạ độ, bạn thử chọn lại gợi ý khác');
+            notify('error', 'Không lấy được toạ độ, bạn thử chọn lại gợi ý khác');
         }
     }
 
@@ -174,16 +183,16 @@ export default function ProfilePage({onBack, onLoggedOut}) {
 
     async function useMyLocation() {
         setLocating(true);
-        setError('');
+        setAddressErrors((errs) => ({...errs, fullAddress: undefined}));
         try {
             const {lat, lng} = await getCurrentPosition();
             const text = await reverseGeocode(lat, lng);
             setSuggestions([]);
             setShowSuggestions(false);
             setAddress((a) => ({...a, fullAddress: text || a.fullAddress, lat, lng}));
-            if (!text) setError('Đã lấy được vị trí nhưng chưa tìm ra tên địa chỉ, bạn hãy nhập địa chỉ thủ công');
+            if (!text) setAddressErrors((errs) => ({...errs, fullAddress: 'Đã lấy được vị trí nhưng chưa tìm ra tên địa chỉ, bạn hãy nhập địa chỉ thủ công'}));
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         } finally {
             setLocating(false);
         }
@@ -194,7 +203,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
             await setDefaultAddress(id);
             setAddresses(await getAddresses());
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         }
     }
 
@@ -205,7 +214,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
             if (editingId === id) closeAddressForm();
             setAddresses(await getAddresses());
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         }
     }
 
@@ -227,6 +236,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                 <h1>Hồ sơ</h1>
             </header>
             <div className="body profile-body">
+                {loadError && <div className="error" role="alert">{loadError}</div>}
                 <div className="profile-head">
                     <div className="profile-avatar">
                         {user?.avatarUrl ? <img src={user.avatarUrl} alt=""/> : <UserCircle size={48}/>}
@@ -240,14 +250,19 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                                     onClick={() => fileRef.current?.click()}>
                                 <Camera size={16}/>{uploading ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}
                             </button>
+                            {avatarError && <p className="error" role="alert">{avatarError}</p>}
                         </div>
                     </div>
                 </div>
 
-                <form onSubmit={save}>
+                <form onSubmit={save} noValidate>
                     <label className="label">Họ và tên
-                        <input className="input" value={name} onChange={e => setName(e.target.value)}
-                               required maxLength={100}/>
+                        <input className="input" value={name} onChange={e => {
+                                   setName(e.target.value);
+                                   setNameError('');
+                               }}
+                               maxLength={100}/>
+                        {nameError && <p className="error" role="alert">{nameError}</p>}
                     </label>
                     <label className="label">Email
                         <input className="input" value={user?.email || 'Chưa cập nhật'} readOnly/>
@@ -255,7 +270,6 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                     <label className="label">Số điện thoại
                         <input className="input" value={user?.phoneNumber || 'Chưa cập nhật'} readOnly/>
                     </label>
-                    {error && <div className="error">{error}</div>}
                     <button className="btn primary" disabled={saving}>
                         <Save size={18}/>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </button>
@@ -284,12 +298,16 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                     ? <button className="btn secondary" onClick={openAddAddress}>
                         <Plus size={18}/>Thêm địa chỉ mới
                     </button>
-                    : <form className="address-form" onSubmit={submitAddress}>
+                    : <form className="address-form" onSubmit={submitAddress} noValidate>
                         <h3>{editingId ? 'Sửa địa chỉ' : 'Thêm địa chỉ'}</h3>
                         <label className="label">Tên gọi
                             <input className="input" value={address.label}
-                                   onChange={e => setAddress({...address, label: e.target.value})}
-                                   placeholder="Nhà riêng" required/>
+                                   onChange={e => {
+                                       setAddress({...address, label: e.target.value});
+                                       setAddressErrors((errs) => ({...errs, label: undefined}));
+                                   }}
+                                   placeholder="Nhà riêng"/>
+                            {addressErrors.label && <p className="error" role="alert">{addressErrors.label}</p>}
                         </label>
                         <label className="label">Địa chỉ
                             <div style={{position: 'relative'}}>
@@ -301,7 +319,6 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                                     placeholder="Số nhà, đường, phường/xã..."
                                     autoComplete="off"
-                                    required
                                 />
                                 {showSuggestions && suggestions.length > 0 && (
                                     <ul className="suggestions">
@@ -316,6 +333,7 @@ export default function ProfilePage({onBack, onLoggedOut}) {
                                     </ul>
                                 )}
                             </div>
+                            {addressErrors.fullAddress && <p className="error" role="alert">{addressErrors.fullAddress}</p>}
                         </label>
                         <button type="button" className="btn secondary" onClick={useMyLocation} disabled={locating}>
                             <LocateFixed size={18}/>{locating ? 'Đang lấy vị trí...' : 'Dùng vị trí hiện tại'}
