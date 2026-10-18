@@ -268,4 +268,4 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
       })}
     </ul>
   );
-}
+}}
