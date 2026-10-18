@@ -60,12 +60,15 @@ function CustomerHeader({user}) {
                     <Link to="/dashboard">Tổng quan</Link>
                     <Link to="/requests">Yêu cầu của tôi</Link>
                     <Link to="/profile">Hồ sơ</Link>
-                    {user.roles?.includes('WORKER') && <Link to="/worker/dashboard">Khu vực thợ</Link>}
+                    {user.roles?.includes('WORKER')
+                        ? <Link to="/worker/dashboard">Khu vực thợ</Link>
+                        : <Link to="/worker/register">Trở thành thợ</Link>}
                     <button className="customer-primary" onClick={() => nav('/create')}>Tạo yêu cầu</button>
                     <button className="customer-login" onClick={signOut}>Đăng xuất</button>
                 </> : <>
                     <a href="#services">Dịch vụ</a>
                     <a href="#process">Cách hoạt động</a>
+                    <Link to="/worker">Trở thành thợ</Link>
                     <Link className="customer-login" to="/auth">Đăng nhập</Link>
                 </>}
             </nav>
@@ -139,6 +142,12 @@ function Landing() {
                 {u ? <button className="customer-action primary" onClick={() => nav('/create')}>Tạo yêu cầu ngay</button> : <Link className="customer-action primary" to="/auth">Đăng nhập / Đăng ký</Link>}
             </div>
         </section>
+        {!hasRole('WORKER') && <section className="customer-cta">
+            <div className="customer-cta-inner">
+                <div><h2>Bạn là thợ lành nghề?</h2><p>Đăng ký trở thành đối tác Thợ Nhà để nhận việc gần bạn và tự chủ thu nhập.</p></div>
+                {u ? <Link className="customer-action primary" to="/worker/register">Đăng ký làm thợ <ArrowRight size={18} className="ms-2" aria-hidden="true"/></Link> : <Link className="customer-action primary" to="/worker">Tìm hiểu &amp; đăng ký làm thợ</Link>}
+            </div>
+        </section>}
         <footer className="customer-footer"><Copyright size={13} aria-hidden="true" style={{verticalAlign: '-2px'}}/> 2026 Thợ Nhà | Nền tảng kết nối dịch vụ sửa chữa tại nhà</footer>
     </div>;
 }
