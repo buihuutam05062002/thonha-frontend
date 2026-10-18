@@ -36,7 +36,7 @@ export function SelectField({
             Chọn
           </option>
           {options.map((o) => (
-            <option key={o} value={o}>
+            <option key={o} value={o} style={{ color: "#111111", background: "#ffffff" }}>
               {o}
             </option>
           ))}

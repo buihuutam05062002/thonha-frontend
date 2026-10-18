@@ -1,12 +1,41 @@
-import axios from "axios";
-
-const axiosProvince = axios.create({
-  baseURL: "https://provinces.open-api.vn/api/v2",
-  timeout: 15000,
-});
+export const PROVINCES = [
+  "Thành phố Hà Nội",
+  "Thành phố Huế",
+  "Thành phố Hải Phòng",
+  "Thành phố Đà Nẵng",
+  "Thành phố Hồ Chí Minh",
+  "Thành phố Cần Thơ",
+  "Tỉnh Tuyên Quang",
+  "Tỉnh Lào Cai",
+  "Tỉnh Thái Nguyên",
+  "Tỉnh Phú Thọ",
+  "Tỉnh Bắc Ninh",
+  "Tỉnh Hưng Yên",
+  "Tỉnh Ninh Bình",
+  "Tỉnh Quảng Trị",
+  "Tỉnh Quảng Ngãi",
+  "Tỉnh Gia Lai",
+  "Tỉnh Khánh Hòa",
+  "Tỉnh Lâm Đồng",
+  "Tỉnh Đắk Lắk",
+  "Tỉnh Đồng Nai",
+  "Tỉnh Tây Ninh",
+  "Tỉnh Vĩnh Long",
+  "Tỉnh Đồng Tháp",
+  "Tỉnh Cà Mau",
+  "Tỉnh An Giang",
+  "Tỉnh Cao Bằng",
+  "Tỉnh Lạng Sơn",
+  "Tỉnh Lai Châu",
+  "Tỉnh Điện Biên",
+  "Tỉnh Sơn La",
+  "Tỉnh Quảng Ninh",
+  "Tỉnh Thanh Hóa",
+  "Tỉnh Nghệ An",
+  "Tỉnh Hà Tĩnh",
+];
 
 export async function getProvinces() {
-  const { data } = await axiosProvince.get("/p/");
-  return Array.isArray(data) ? data.map((p) => p?.name).filter(Boolean) : [];
+  return PROVINCES;
 }
  
