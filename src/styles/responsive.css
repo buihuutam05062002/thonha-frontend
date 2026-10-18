@@ -8,12 +8,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 img, video { max-width: 100%; }
 
 /* ---------- Thanh menu khách: nút ☰ + menu thả xuống ---------- */
-. .customer-menu-toggle { display: none; }
+ .customer-menu-toggle { display: none; }
 
 @media (max-width: 1199px) {
-  . .customer-navbar-inner { gap: 12px; }
+   .customer-navbar-inner { gap: 12px; }
 
-  . .customer-menu-toggle {
+   .customer-menu-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -27,11 +27,11 @@ img, video { max-width: 100%; }
     color: var(--customer-dark);
     cursor: pointer;
   }
-  . .customer-menu-toggle:hover { background: #f1f5f9; }
-  . .customer-menu-toggle:focus-visible { outline: 2px solid var(--customer-orange); outline-offset: 2px; }
+   .customer-menu-toggle:hover { background: #f1f5f9; }
+   .customer-menu-toggle:focus-visible { outline: 2px solid var(--customer-orange); outline-offset: 2px; }
 
   /* Menu: ẩn mặc định, bấm ☰ mới xổ ra, phủ ngang toàn thanh */
-  . .customer-nav {
+   .customer-nav {
     display: none;
     position: absolute;
     top: 100%;
@@ -47,11 +47,11 @@ img, video { max-width: 100%; }
     background: #fff;
     box-shadow: 0 18px 30px rgba(15, 23, 42, .12);
   }
-  . .customer-nav.open { display: flex; }
+   .customer-nav.open { display: flex; }
 
   /* Đè luật cũ (≤640px) đang ẩn mọi liên kết trừ "Tạo yêu cầu" */
-  . .customer-navbar .customer-nav.open a,
-  . .customer-navbar .customer-nav.open button {
+   .customer-navbar .customer-nav.open a,
+   .customer-navbar .customer-nav.open button {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -62,49 +62,49 @@ img, video { max-width: 100%; }
     font-size: 15px;
     text-align: left;
   }
-  . .customer-navbar .customer-nav.open .customer-primary,
-  . .customer-navbar .customer-nav.open .customer-login {
+   .customer-navbar .customer-nav.open .customer-primary,
+   .customer-navbar .customer-nav.open .customer-login {
     justify-content: center;
     margin-top: 6px;
   }
-  . .customer-navbar .customer-nav.open .customer-primary { margin-top: 10px; }
+   .customer-navbar .customer-nav.open .customer-primary { margin-top: 10px; }
 }
 
 /* ---------- Trang chủ khách ---------- */
-. .customer-hero-actions { flex-wrap: wrap; }
+ .customer-hero-actions { flex-wrap: wrap; }
 
 @media (max-width: 900px) {
-  . .customer-hero h1 { font-size: clamp(32px, 7vw, 46px); line-height: 1.12; }
-  . .customer-section { padding-top: 48px; padding-bottom: 36px; }
+   .customer-hero h1 { font-size: clamp(32px, 7vw, 46px); line-height: 1.12; }
+  .customer-section { padding-top: 48px; padding-bottom: 36px; }
 }
 
 @media (max-width: 640px) {
-  . .customer-brand span { display: none; }           /* gọn: chỉ còn logo + "Thợ Nhà" */
-  . .customer-brand img { width: 40px; height: 40px; }
-  . .customer-hero-inner { padding: 36px 0 44px; }
-  . .customer-hero-actions .customer-action { flex: 1 1 100%; justify-content: center; }
-  . .customer-cta-inner .customer-action { width: 100%; justify-content: center; }
-  . .customer-footer { padding-inline: 16px; line-height: 1.5; text-align: center; }
+   .customer-brand span { display: none; }           /* gọn: chỉ còn logo + "Thợ Nhà" */
+   .customer-brand img { width: 40px; height: 40px; }
+   .customer-hero-inner { padding: 36px 0 44px; }
+   .customer-hero-actions .customer-action { flex: 1 1 100%; justify-content: center; }
+   .customer-cta-inner .customer-action { width: 100%; justify-content: center; }
+   .customer-footer { padding-inline: 16px; line-height: 1.5; text-align: center; }
 }
 
 @media (max-width: 380px) {
-  . .customer-hero h1 { font-size: 30px; }
+   .customer-hero h1 { font-size: 30px; }
 }
 
 /* ---------- Các trang trong tài khoản khách (tạo yêu cầu, hồ sơ, yêu cầu của tôi, theo dõi) ---------- */
-. .topbar h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-. .topbar .icon-btn { min-width: 44px; min-height: 44px; }
+ .topbar h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ .topbar .icon-btn { min-width: 44px; min-height: 44px; }
 
 @media (max-width: 640px) {
   /* iOS tự phóng to trang khi ô nhập < 16px */
-  . input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-  . select,
-  . textarea { font-size: 16px; }
+   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+   select,
+   textarea { font-size: 16px; }
 
-  . .shell { min-height: 100dvh; }
-  . .footer { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
-  . .rq-pager { gap: 8px; }
-  . .rq-pager .btn { min-width: 0; }
+   .shell { min-height: 100dvh; }
+   .footer { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+   .rq-pager { gap: 8px; }
+   .rq-pager .btn { min-width: 0; }
 }
 
 /* ---------- Khu vực thợ (Bootstrap) ---------- */

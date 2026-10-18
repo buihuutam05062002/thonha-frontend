@@ -6,12 +6,11 @@ import {
   fetchComplaint, fetchComplaints, fetchComplaintStats, resolveComplaint, takeComplaint,
 } from "../../../api/complaintApi";
 import { formatRelative } from "../../../utils/format";
-import Pagination from "../user-management/Pagination";
-import ComplaintDetail, { STATUS_CLASS } from "./ComplaintDetail";
-import "../user-management/UserManagement.css"; 
-import "../worker-approval/WorkerApprovalPage.css";
-import "../wallets/WalletManagement.css";
-import "./Complaint.css";
+// import , { STATUS_CLASS } from "./ComplaintDetail";
+import ComplaintDetail, { STATUS_TONE } from "./ComplaintDetail";
+import { Pagination } from "@/components/admin/ui";
+import { StatusBadge } from "../../../components/admin/ui";
+
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
 const EMPTY_STATS = { PENDING: 0, PROCESSING: 0, RESOLVED: 0, REJECTED: 0, ALL: 0 };
@@ -253,8 +252,7 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
               <div className="wa-card-body">
                 <div className="cp-card-top">
                   <strong className="wa-card-name">#{c.id} | {c.requestCode}</strong>
-                  <span className={`wa-status ${STATUS_CLASS[c.status] ?? ""}`}>{complaintStatusLabel(c)}</span>
-                </div>
+                  <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>                </div>
                 <span className="cp-reason">{complaintReasonLabel(c)}</span>
                 <p className="cp-card-desc">{c.description}</p>
                 <div className="wa-meta">
