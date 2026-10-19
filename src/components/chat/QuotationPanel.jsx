@@ -140,6 +140,10 @@ export default function QuotationPanel({
   useEffect(() => {
     if (connected) load(); // bù sự kiện bị lỡ khi mất mạng
   }, [connected, load]);
+  useUserTopics(role === "customer" ? userId : null, ["warranty"], (msg) => {
+    if (msg?.requestId && Number(msg.requestId) !== Number(requestId)) return;
+    if (["WARRANTY_REJECTED", "WARRANTY_COMPLETED"].includes(msg?.type)) load();
+  });
 
   async function run(fn) {
     setBusy(true);
