@@ -1,9 +1,6 @@
 import axiosClient from "./axiosClient";
 
 /**
- * Worker Profile API
- * 
- * Backend endpoints:
  * - POST   /api/v1/worker/profile (multipart/form-data)
  * - GET    /api/v1/worker/profile
  * - PATCH  /api/v1/worker/availability
@@ -11,20 +8,9 @@ import axiosClient from "./axiosClient";
  * - PUT    /api/v1/worker/profile (nộp lại hồ sơ bị từ chối)
  * - GET    /api/v1/worker/requests/{id}
  * - PATCH  /api/v1/worker/requests/{id}/status
- * 
- * Register payload (data part):
- * {
- *   provinceCity: string,
- *   operatingArea: string,
- *   experienceYears: number,
- *   categoryIds: number[],
- *   agreePolicy: boolean
- * }
- * Files: cccdFront, cccdBack, certificates[], degrees[]
  */
 
 /**
- * Register worker profile
  * @param {Object} data - Worker profile data
  * @param {string} data.provinceCity - Province/City
  * @param {string} data.operatingArea - Operating area
@@ -40,7 +26,7 @@ import axiosClient from "./axiosClient";
  */
 export async function registerWorkerProfile(data, files) {
   const formData = new FormData();
-  
+
   const payload = {
     provinceCity: data.provinceCity,
     operatingArea: data.operatingArea,
@@ -48,31 +34,30 @@ export async function registerWorkerProfile(data, files) {
     categoryIds: data.categoryIds,
     agreePolicy: data.agreePolicy ?? true,
   };
-  
+
   formData.append(
-    "data",
-    new Blob([JSON.stringify(payload)], { type: "application/json" })
+      "data",
+      new Blob([JSON.stringify(payload)], { type: "application/json" })
   );
-  
+
   formData.append("cccdFront", files.cccdFront);
   formData.append("cccdBack", files.cccdBack);
-  
+
   if (files.certificates?.length) {
     files.certificates.forEach((f) => formData.append("certificates", f));
   }
   if (files.degrees?.length) {
     files.degrees.forEach((f) => formData.append("degrees", f));
   }
-  
+
   return axiosClient.post("/worker/profile", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 }
 
 /**
- * Nộp lại hồ sơ đã bị từ chối. Giấy tờ không chọn lại thì BE giữ bản cũ.
- * @param {Object} data - giống registerWorkerProfile
- * @param {Object} [files] - cccdFront?, cccdBack?, certificates?, degrees?
+ * @param {Object} data
+ * @param {Object} [files]
  */
 export async function resubmitWorkerProfile(data, files = {}) {
   const formData = new FormData();
@@ -95,8 +80,7 @@ export async function resubmitWorkerProfile(data, files = {}) {
 }
 
 /**
- * Get current user's worker profile
- * @returns {Promise<Object|null>} Worker profile or null if not found
+ * @returns {Promise<Object|null>}
  */
 export async function getMyWorkerProfile() {
   try {
@@ -110,17 +94,14 @@ export async function getMyWorkerProfile() {
 }
 
 /**
- * Update worker availability status
- * @param {boolean} available - True for online/ready, false for offline
- * @returns {Promise<Object>} Updated worker profile
+ * @param {boolean} available
+ * @returns {Promise<Object>}
  */
 export async function updateWorkerAvailability(available) {
   return axiosClient.patch("/worker/availability", { available });
 }
 
 /**
- * Gửi vị trí GPS hiện tại của thợ (backend lưu vào Redis để ghép thợ theo khoảng cách).
- * Chỉ có tác dụng khi thợ đang ở trạng thái sẵn sàng.
  * @param {number} lat
  * @param {number} lng
  */
@@ -129,15 +110,35 @@ export async function updateWorkerLocation(lat, lng) {
 }
 
 /**
- * Dữ liệu tổng hợp cho dashboard: thống kê, yêu cầu đang chờ phản hồi, đơn gần đây, thu nhập 7 ngày.
  * @returns {Promise<{summary:Object, incomingRequests:Array, recentOrders:Array, weeklyIncome:Array}>}
  */
+// Lần đầu trình duyệt thấy mỗi yêu cầu (theo đồng hồ của chính máy này). Dùng cho trường hợp backend chưa gửi
+// "remainingSeconds": thợ thường thấy yêu cầu ngay khi có (đẩy qua WebSocket) nên coi như vừa mới gửi.
+const firstSeenMs = new Map();
+
 export async function getWorkerDashboard() {
-  return axiosClient.get("/worker/dashboard");
+  const data = await axiosClient.get("/worker/dashboard");
+  const receivedAt = Date.now();
+  return {
+    ...data,
+    incomingRequests: (data?.incomingRequests ?? []).map((r) => {
+      let deadlineMs;
+      if (r.remainingSeconds != null) {
+        // Backend mới: số giây còn lại do máy chủ tính (chính xác nhất, không lệch múi giờ/đồng hồ).
+        deadlineMs = receivedAt + r.remainingSeconds * 1000;
+      } else {
+        // Backend cũ: expiresAt - sentAt luôn là thời hạn nhận đơn (cả hai parse cùng cách nên múi giờ triệt tiêu),
+        // đếm từ lúc trình duyệt thấy yêu cầu lần đầu thay vì so với đồng hồ máy chủ.
+        const duration = Date.parse(r.expiresAt) - Date.parse(r.sentAt);
+        if (!firstSeenMs.has(r.matchingLogId)) firstSeenMs.set(r.matchingLogId, receivedAt);
+        deadlineMs = firstSeenMs.get(r.matchingLogId) + (Number.isFinite(duration) && duration > 0 ? duration : 5 * 60 * 1000);
+      }
+      return { ...r, deadlineMs };
+    }),
+  };
 }
 
 /**
- * Thợ chấp nhận / từ chối yêu cầu được hệ thống gửi tới.
  * @param {number} requestId
  * @param {number} matchingLogId
  * @param {"ACCEPTED"|"REJECTED"} result
@@ -152,7 +153,6 @@ export async function respondToMatching(requestId, matchingLogId, result, note) 
 }
 
 /**
- * Chi tiết yêu cầu mà thợ đang/đã phụ trách (địa chỉ, mô tả, ảnh đính kèm...).
  * @param {number} requestId
  */
 export async function getWorkerRequestDetail(requestId) {
@@ -160,7 +160,6 @@ export async function getWorkerRequestDetail(requestId) {
 }
 
 /**
- * Thợ chuyển trạng thái đơn sang bước kế tiếp.
  * @param {number} requestId
  * @param {"ON_THE_WAY"|"IN_PROGRESS"|"COMPLETED"} status
  */
@@ -168,5 +167,4 @@ export async function updateRequestStatus(requestId, status) {
   return axiosClient.patch(`/worker/requests/${requestId}/status`, { status });
 }
 
-// Alias for backward compatibility
 export const registerWorker = registerWorkerProfile;
