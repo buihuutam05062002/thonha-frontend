@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Clock, Search } from "lucide-react";
+import { Clock } from "lucide-react";
 import { notify as showNotice } from "../../../utils/notify";
 import {
   COMPLAINT_REASON_LABELS, complaintReasonLabel, complaintStatusLabel,
@@ -7,8 +7,10 @@ import {
 } from "../../../api/complaintApi";
 import { formatRelative } from "../../../utils/format";
 import ComplaintDetail, { STATUS_TONE } from "./ComplaintDetail";
-import { Pagination, StatusBadge } from "../../../components/admin/ui";
-
+import {
+  Button, Empty, FilterBar, ListCard, ListCardSkeleton, ListCards, ListPane, PageShell,
+  Pagination, PillSelect, SearchBox, SplitPanel, StatusBadge, Tabs,
+} from "../../../components/admin/ui";
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
 const EMPTY_STATS = { PENDING: 0, PROCESSING: 0, RESOLVED: 0, REJECTED: 0, ALL: 0 };
@@ -74,7 +76,6 @@ export default function ComplaintPage() {
     return () => { cancelled = true; };
   }, [reloadKey]);
 
- 
   useEffect(() => {
     if (selectedId == null && list.content.length > 0) setSelectedId(list.content[0].id);
   }, [list, selectedId]);
@@ -148,57 +149,33 @@ export default function ComplaintPage() {
 
   const hasFilter = filters.keyword || filters.reason;
   const shownDetail = detail?.complaint?.id === selectedId ? detail : null;
+  const tabItems = TABS.map((t) => ({ value: t.value, key: t.key, label: t.label, count: stats[t.key] ?? 0 }));
 
   return (
-    <section className="wa-page">
-      <header className="wa-header">
-        <h1>Khiếu nại</h1>
-        <p>Tiếp nhận và xử lý khiếu nại, tranh chấp giữa khách và thợ</p>
-      </header>
+    <PageShell
+      title="Khiếu nại"
+      subtitle={stats.PENDING > 0 ? `Có ${stats.PENDING} khiếu nại đang chờ xử lý` : "Tiếp nhận và xử lý khiếu nại, tranh chấp giữa khách và thợ"}
+    >
+      <SplitPanel>
+        <ListPane>
+          <Tabs items={tabItems} value={status} onChange={changeStatus} label="Trạng thái khiếu nại" />
 
-      <div className="wa-panel">
-        <div className="wa-list">
-          <div className="wa-tabs" role="tablist">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                role="tab"
-                aria-selected={status === t.value}
-                className={status === t.value ? "active" : ""}
-                onClick={() => changeStatus(t.value)}
-              >
-                {t.label} <span className="wa-count">{stats[t.key] ?? 0}</span>
-              </button>
-            ))}
-          </div>
-
-          <form className="wa-filters" onSubmit={applyFilters}>
-            <div className="wa-search">
-              <Search size={14} aria-hidden="true" />
-              <input
-                value={keywordInput}
-                onChange={(e) => setKeywordInput(e.target.value)}
-                placeholder="Mã đơn, tên hoặc SĐT người gửi"
-                aria-label="Từ khóa"
-              />
-            </div>
-            <select
-              className="cp-select"
-              value={filters.reason}
-              onChange={(e) => changeReason(e.target.value)}
-              aria-label="Lý do khiếu nại"
-            >
+          <FilterBar onSubmit={applyFilters}>
+            <SearchBox
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              placeholder="Mã đơn, tên hoặc SĐT người gửi"
+              aria-label="Từ khóa"
+            />
+            <PillSelect value={filters.reason} onChange={(e) => changeReason(e.target.value)} aria-label="Lý do khiếu nại">
               <option value="">Mọi lý do</option>
               {Object.entries(COMPLAINT_REASON_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
-            </select>
-            <button type="submit" className="wa-btn">Tìm</button>
-            {(hasFilter || keywordInput) && (
-              <button type="button" className="wa-btn wa-btn-ghost" onClick={resetFilters}>Xóa lọc</button>
-            )}
-          </form>
+            </PillSelect>
+            <Button type="submit">Tìm</Button>
+            {(hasFilter || keywordInput) && <Button variant="ghost" className="underline" onClick={resetFilters}>Xóa lọc</Button>}
+          </FilterBar>
 
           <ComplaintList
             items={list.content}
@@ -209,7 +186,7 @@ export default function ComplaintPage() {
           />
 
           <Pagination page={page} totalPages={list.totalPages} onChange={(p) => { setPage(p); resetSelection(); }} />
-        </div>
+        </ListPane>
 
         <ComplaintDetail
           key={selectedId ?? "none"}
@@ -219,50 +196,34 @@ export default function ComplaintPage() {
           onTake={handleTake}
           onResolve={handleResolve}
         />
-      </div>
-    </section>
+      </SplitPanel>
+    </PageShell>
   );
 }
 
 function ComplaintList({ items, loading, error, selectedId, onSelect }) {
-  if (loading && items.length === 0) {
-    return (
-      <ul className="wa-cards" aria-busy="true">
-        {[0, 1, 2, 3].map((i) => <li key={i} className="wa-card wa-skeleton" />)}
-      </ul>
-    );
-  }
-  if (error) return <p className="wa-empty wa-error" role="alert">{error}</p>;
-  if (items.length === 0) return <p className="wa-empty">Không có khiếu nại nào phù hợp</p>;
+  if (loading && items.length === 0) return <ListCardSkeleton />;
+  if (error) return <Empty error>{error}</Empty>;
+  if (items.length === 0) return <Empty>Không có khiếu nại nào phù hợp</Empty>;
 
   return (
-    <ul className={`wa-cards ${loading ? "is-loading" : ""}`}>
-      {items.map((c) => {
-        const active = c.id === selectedId;
-        return (
-          <li key={c.id}>
-            <button
-              type="button"
-              className={`wa-card ${active ? "active" : ""}`}
-              onClick={() => onSelect(c.id)}
-              aria-current={active ? "true" : undefined}
-            >
-              <div className="wa-card-body">
-                <div className="cp-card-top">
-                  <strong className="wa-card-name">#{c.id} | {c.requestCode}</strong>
-                  <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>
-                </div>
-                <span className="cp-reason">{complaintReasonLabel(c)}</span>
-                <p className="cp-card-desc">{c.description}</p>
-                <div className="wa-meta">
-                  <span>{c.complainantRole === "WORKER" ? "Thợ" : "Khách"}: {c.complainantName}</span>
-                  <span><Clock size={12} /> {formatRelative(c.createdAt)}</span>
-                </div>
-              </div>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+    <ListCards loading={loading}>
+      {items.map((c) => (
+        <ListCard key={c.id} active={c.id === selectedId} onClick={() => onSelect(c.id)}>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <strong className="min-w-0 truncate text-sm text-ink">#{c.id} | {c.requestCode}</strong>
+              <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>
+            </div>
+            <span className="text-xs font-semibold text-brand-dark">{complaintReasonLabel(c)}</span>
+            <p className="m-0 line-clamp-2 text-[13px] text-ink">{c.description}</p>
+            <div className="flex flex-wrap gap-x-12px gap-y-1 text-[11.5px] text-subtle">
+              <span>{c.complainantRole === "WORKER" ? "Thợ" : "Khách"}: {c.complainantName}</span>
+              <span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatRelative(c.createdAt)}</span>
+            </div>
+          </div>
+        </ListCard>
+      ))}
+    </ListCards>
   );
 }
