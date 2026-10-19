@@ -6,10 +6,8 @@ import {
   fetchComplaint, fetchComplaints, fetchComplaintStats, resolveComplaint, takeComplaint,
 } from "../../../api/complaintApi";
 import { formatRelative } from "../../../utils/format";
-// import , { STATUS_CLASS } from "./ComplaintDetail";
 import ComplaintDetail, { STATUS_TONE } from "./ComplaintDetail";
-import { Pagination } from "@/components/admin/ui";
-import { StatusBadge } from "../../../components/admin/ui";
+import { Pagination, StatusBadge } from "../../../components/admin/ui";
 
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
@@ -39,7 +37,7 @@ export default function ComplaintPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
 
-  const [reloadKey, setReloadKey] = useState(0); // tăng lên để tải lại danh sách, số đếm và chi tiết sau khi xử lý
+  const [reloadKey, setReloadKey] = useState(0);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
@@ -52,7 +50,6 @@ export default function ComplaintPage() {
     return () => window.removeEventListener("complaints:changed", onChanged);
   }, [reload]);
 
-  // danh sách
   useEffect(() => {
     let cancelled = false;
     setListLoading(true);
@@ -98,6 +95,7 @@ export default function ComplaintPage() {
     setSelectedId(null);
     setDetail(null);
     setList(EMPTY_PAGE);
+  };
 
   const changeStatus = (value) => {
     if (value === status) return;
@@ -252,7 +250,8 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
               <div className="wa-card-body">
                 <div className="cp-card-top">
                   <strong className="wa-card-name">#{c.id} | {c.requestCode}</strong>
-                  <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>                </div>
+                  <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>
+                </div>
                 <span className="cp-reason">{complaintReasonLabel(c)}</span>
                 <p className="cp-card-desc">{c.description}</p>
                 <div className="wa-meta">
@@ -266,4 +265,4 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
       })}
     </ul>
   );
-}}
+}
