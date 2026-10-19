@@ -6,6 +6,7 @@ import axiosClient from "./axiosClient";
  * Phía thợ (quyền WORKER):
  * - GET  /api/v1/worker/wallet
  * - GET  /api/v1/worker/wallet/transactions?page=&size=        (mới nhất trước)
+ * - POST /api/v1/worker/wallet/top-ups, GET /api/v1/worker/wallet/top-ups/{id}   (nạp ví bằng QR)
  *
  * Phía admin (quyền ADMIN). {workerId} là id hồ sơ thợ (worker_profile.id), KHÔNG phải id tài khoản:
  * - GET  /api/v1/admin/wallets?keyword=&negativeOnly=&page=&size=
@@ -37,7 +38,12 @@ export const getMyWallet = () => axiosClient.get("/worker/wallet");
 export const getMyWalletTransactions = ({ page = 0, size = 15 } = {}) =>
     axiosClient.get("/worker/wallet/transactions", { params: { page, size } });
 
-// ---------------------------------------------------------------- admin
+// Thợ tự nạp ví bằng QR (SePay):
+// POST /api/v1/worker/wallet/top-ups {amount}  -> TopUpResponse (qrUrl, paymentCode, bankName, bankAccount, accountHolder...)
+// GET  /api/v1/worker/wallet/top-ups/{id}      -> trạng thái PENDING_PAYMENT | SUCCESS (kèm balance mới)
+export const createTopUp = (amount) => axiosClient.post("/worker/wallet/top-ups", { amount });
+export const getTopUp = (id) => axiosClient.get(`/worker/wallet/top-ups/${id}`);
+
 export const fetchWallets = ({ keyword, negativeOnly = false, page = 0, size = 8 } = {}) =>
     axiosClient.get("/admin/wallets", {
         params: { keyword: keyword?.trim() || undefined, negativeOnly, page, size },

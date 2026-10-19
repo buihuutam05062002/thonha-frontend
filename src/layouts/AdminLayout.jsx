@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/admin/Sidebar/Sidebar";
 import { useAuth } from "../auth/useAuth";
-import "./AdminLayout.css";
 
 export default function AdminLayout() {
   const { user: stored } = useAuth();
@@ -12,9 +11,9 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="admin-layout">
+    <div className="flex min-h-screen bg-surface text-ink">
       <Sidebar user={user} />
-      <main className="admin-main">
+      <main className="flex min-w-0 flex-1">
         <Outlet />
       </main>
     </div>

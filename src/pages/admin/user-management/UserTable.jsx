@@ -1,64 +1,61 @@
 import { USER_STATUSES } from "../../../api/userApi";
+import { Button, StatusBadge, Table, Td, Th } from "../../../components/admin/ui";
 
-// const formatId = (id) => `ND-${String(id).padStart(6, "0")}`;
 const statusLabel = (v) => USER_STATUSES.find((s) => s.value === v)?.label ?? v;
-const statusClass = (v) => String(v ?? "").toLowerCase();
+const STATUS_TONE = { ACTIVE: "success", INACTIVE: "pending", LOCKED: "danger", DELETED: "neutral" };
+
+function MessageRow({ error, children }) {
+  return (
+    <tr>
+      <Td colSpan={7} className={`py-6 text-center ${error ? "text-red-600" : "text-subtle"}`}>{children}</Td>
+    </tr>
+  );
+}
 
 export default function UserTable({ users, loading, error, onView, onToggleLock }) {
   return (
-    <div className="um-table-wrap">
-      <table className="um-table">
+    <div className="min-w-0 rounded-2xl border-[1px] border-line bg-white p-2.5">
+      <Table>
         <thead>
           <tr>
-            <th>Mã người dùng</th>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>Số điện thoại</th>
-            <th>Vai trò</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
+            <Th>Mã người dùng</Th>
+            <Th>Họ tên</Th>
+            <Th>Email</Th>
+            <Th>Số điện thoại</Th>
+            <Th>Vai trò</Th>
+            <Th>Trạng thái</Th>
+            <Th>Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {loading && (
-            <tr><td colSpan={7} className="um-empty">Đang tải...</td></tr>
-          )}
-          {!loading && error && (
-            <tr><td colSpan={7} className="um-empty um-error">{error}</td></tr>
-          )}
-          {!loading && !error && users.length === 0 && (
-            <tr><td colSpan={7} className="um-empty">Không tìm thấy người dùng phù hợp</td></tr>
-          )}
+          {loading && <MessageRow>Đang tải...</MessageRow>}
+          {!loading && error && <MessageRow error>{error}</MessageRow>}
+          {!loading && !error && users.length === 0 && <MessageRow>Không tìm thấy người dùng phù hợp</MessageRow>}
           {!loading && !error && users.map((u) => {
             const locked = u.userStatus === "LOCKED";
             return (
               <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.name}</td>
-                <td>{u.email}</td>
-                <td>{u.phoneNumber}</td>
-                <td>{[...(u.roles ?? [])].join(", ")}</td>
-                <td>
-                  <span className={`um-status ${statusClass(u.userStatus)}`}>
+                <Td>{u.id}</Td>
+                <Td><b>{u.name}</b></Td>
+                <Td>{u.email}</Td>
+                <Td>{u.phoneNumber}</Td>
+                <Td>{[...(u.roles ?? [])].join(", ")}</Td>
+                <Td>
+                  <StatusBadge tone={STATUS_TONE[u.userStatus]} className={u.userStatus === "DELETED" ? "line-through" : ""}>
                     {statusLabel(u.userStatus)}
-                  </span>
-                </td>
-                <td className="um-actions">
-                  <button onClick={() => onView(u)}>Xem</button>
+                  </StatusBadge>
+                </Td>
+                <Td nowrap>
+                  <Button variant="ghost" size="sm" onClick={() => onView(u)}>Xem</Button>
                   {u.userStatus !== "DELETED" && (
-                    <>
-                      <span aria-hidden="true">|</span>
-                      <button onClick={() => onToggleLock(u)}>
-                        {locked ? "Mở khóa" : "Khóa"}
-                      </button>
-                    </>
+                    <Button variant="ghost" size="sm" onClick={() => onToggleLock(u)}>{locked ? "Mở khóa" : "Khóa"}</Button>
                   )}
-                </td>
+                </Td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }

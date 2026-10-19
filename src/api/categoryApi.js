@@ -21,3 +21,7 @@ export async function updateCategory(id, { name, description, icon, status }) {
 export async function deleteCategory(id) {
   return axiosClient.delete(`/service-categories/${id}`);
 }
+
+export async function getAdminCategories({ page = 0, size = 10 } = {}) {
+  return axiosClient.get("/admin/service-categories", { params: { page, size, sort: "id,asc" } });
+}

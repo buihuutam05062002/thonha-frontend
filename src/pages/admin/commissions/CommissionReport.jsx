@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { fetchCommissionSettlements, fetchCommissionSummary, PAYMENT_METHODS } from "../../../api/commissionApi";
 import { formatDateTime, formatPercent, formatVnd, toIsoDate } from "../../../utils/format";
-import Pagination from "../user-management/Pagination";
+import {
+  Card, DateRangeFilter, Empty, Pagination, Skeleton, StatCard, StatGrid, Table, Td, Th, cn,
+} from "../../../components/admin/ui";
 
 const PAGE_SIZE = 10;
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
@@ -29,10 +31,7 @@ const PRESETS = [
 
 /** Báo cáo hoa hồng: tổng hợp theo khoảng ngày + danh sách từng đơn đã chốt. */
 export default function CommissionReport() {
-  const [presetKey, setPresetKey] = useState("month");
-  const [input, setInput] = useState(() => PRESETS[2].range());
-  const [applied, setApplied] = useState(() => PRESETS[2].range());
-  const [rangeError, setRangeError] = useState("");
+  const [applied, setApplied] = useState(() => PRESETS[2].range()); // khớp nút "Tháng này"
   const [page, setPage] = useState(0);
 
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
@@ -65,24 +64,8 @@ export default function CommissionReport() {
     return () => { cancelled = true; };
   }, [applied, page]);
 
-  const applyPreset = (p) => {
-    const range = p.range();
-    setPresetKey(p.key);
-    setInput(range);
+  const onApply = (range) => {
     setApplied(range);
-    setRangeError("");
-    setPage(0);
-  };
-
-  const applyCustom = (e) => {
-    e.preventDefault();
-    if (input.from && input.to && input.from > input.to) {
-      setRangeError("'Từ ngày' không được sau 'Đến ngày'");
-      return;
-    }
-    setRangeError("");
-    setPresetKey("custom");
-    setApplied({ from: input.from, to: input.to });
     setPage(0);
   };
 
@@ -92,105 +75,70 @@ export default function CommissionReport() {
 
   return (
     <>
-      <div className="cm-card">
-        <div className="cm-presets">
-          {PRESETS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              className={`cm-pill ${presetKey === p.key ? "active" : ""}`}
-              onClick={() => applyPreset(p)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <form className="cm-range" onSubmit={applyCustom} noValidate>
-          <label>
-            Từ ngày
-            <input type="date" value={input.from} max={input.to || undefined} onChange={(e) => setInput({ ...input, from: e.target.value })} />
-          </label>
-          <label>
-            Đến ngày
-            <input type="date" value={input.to} min={input.from || undefined} onChange={(e) => setInput({ ...input, to: e.target.value })} />
-          </label>
-          <button type="submit" className="wa-btn">Áp dụng</button>
-        </form>
-        {rangeError && <p className="cm-error" role="alert">{rangeError}</p>}
-      </div>
+      <DateRangeFilter presets={PRESETS} initialKey="month" onApply={onApply} />
 
       {summaryError ? (
-        <p className="cm-card wa-empty wa-error" role="alert">{summaryError}</p>
+        <Card><Empty error>{summaryError}</Empty></Card>
       ) : (
-        <div className={`cm-stats ${summaryLoading ? "is-loading" : ""}`} aria-busy={summaryLoading}>
-          <StatCard label="Đơn hoàn thành" value={Number(summary.orders).toLocaleString("vi-VN")} />
-          <StatCard label="Tổng doanh thu" value={formatVnd(summary.grossAmount)} />
-          <StatCard
-            label="Hoa hồng thu được" value={formatVnd(summary.commissionAmount)} highlight
-            sub={effectiveRate != null ? `Bình quân ${formatPercent(effectiveRate)} doanh thu` : null}
-          />
-          <StatCard label="Thợ nhận" value={formatVnd(summary.workerAmount)} />
+        <div className={cn("transition-opacity", summaryLoading && "opacity-60")} aria-busy={summaryLoading}>
+          <StatGrid>
+            <StatCard label="Đơn hoàn thành" value={Number(summary.orders).toLocaleString("vi-VN")} />
+            <StatCard label="Tổng doanh thu" value={formatVnd(summary.grossAmount)} />
+            <StatCard
+              highlight label="Hoa hồng thu được" value={formatVnd(summary.commissionAmount)}
+              sub={effectiveRate != null ? `Bình quân ${formatPercent(effectiveRate)} doanh thu` : null}
+            />
+            <StatCard label="Thợ nhận" value={formatVnd(summary.workerAmount)} />
+          </StatGrid>
         </div>
       )}
 
-      <div className="cm-card">
-        <h2 className="cm-title">Chi tiết các đơn đã chốt</h2>
+      <Card title="Chi tiết các đơn đã chốt">
         <SettlementTable rows={rows.content} loading={rowsLoading} error={rowsError} />
         <Pagination page={page} totalPages={rows.totalPages} onChange={setPage} />
-        {rows.totalElements > 0 && <p className="cm-count">Tổng cộng {rows.totalElements.toLocaleString("vi-VN")} đơn</p>}
-      </div>
+        {rows.totalElements > 0 && (
+          <p className="m-0 mt-2.5 text-right text-xs text-subtle">Tổng cộng {rows.totalElements.toLocaleString("vi-VN")} đơn</p>
+        )}
+      </Card>
     </>
   );
 }
 
-function StatCard({ label, value, sub, highlight }) {
-  return (
-    <div className={`cm-stat ${highlight ? "cm-stat-hl" : ""}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {sub && <small>{sub}</small>}
-    </div>
-  );
-}
-
 function SettlementTable({ rows, loading, error }) {
-  if (loading && rows.length === 0) {
-    return <div className="cm-skeleton" aria-busy="true" />;
-  }
-  if (error) return <p className="wa-empty wa-error" role="alert">{error}</p>;
-  if (rows.length === 0) return <p className="wa-empty">Chưa có đơn nào được chốt trong khoảng thời gian này</p>;
+  if (loading && rows.length === 0) return <Skeleton />;
+  if (error) return <Empty error>{error}</Empty>;
+  if (rows.length === 0) return <Empty>Chưa có đơn nào được chốt trong khoảng thời gian này</Empty>;
 
   return (
-    <div className={`cm-table-wrap ${loading ? "is-loading" : ""}`}>
-      <table className="cm-table">
+    <div className={cn("transition-opacity", loading && "opacity-60")}>
+      <Table>
         <thead>
           <tr>
-            <th>Mã đơn</th>
-            <th>Thợ</th>
-            <th className="num">Giá trị đơn</th>
-            <th className="num">Tỷ lệ</th>
-            <th className="num">Hoa hồng</th>
-            <th className="num">Thợ nhận</th>
-            <th>Thanh toán</th>
-            <th>Thời gian</th>
+            <Th>Mã đơn</Th>
+            <Th>Thợ</Th>
+            <Th num>Giá trị đơn</Th>
+            <Th num>Tỷ lệ</Th>
+            <Th num>Hoa hồng</Th>
+            <Th num>Thợ nhận</Th>
+            <Th>Thanh toán</Th>
+            <Th>Thời gian</Th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td><b>{r.requestCode || `#${r.requestId}`}</b></td>
-              <td>{r.workerName || "-"}</td>
-              <td className="num">{formatVnd(r.amount)}</td>
-              <td className="num">{formatPercent(r.commissionRate)}</td>
-              <td className="num cm-comm">{formatVnd(r.commissionAmount)}</td>
-              <td className="num">{formatVnd(r.workerAmount)}</td>
-              <td>{PAYMENT_METHODS[r.paymentMethod] ?? r.paymentMethod}</td>
-              <td className="nowrap">{formatDateTime(r.createdAt)}</td>
+              <Td><b>{r.requestCode || `#${r.requestId}`}</b></Td>
+              <Td>{r.workerName || "-"}</Td>
+              <Td num>{formatVnd(r.amount)}</Td>
+              <Td num>{formatPercent(r.commissionRate)}</Td>
+              <Td num className="font-bold text-brand-dark">{formatVnd(r.commissionAmount)}</Td>
+              <Td num>{formatVnd(r.workerAmount)}</Td>
+              <Td>{PAYMENT_METHODS[r.paymentMethod] ?? r.paymentMethod}</Td>
+              <Td nowrap>{formatDateTime(r.createdAt)}</Td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }

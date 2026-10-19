@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Clock, Search, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Clock, Search } from "lucide-react";
+import { notify as showNotice } from "../../../utils/notify";
 import {
   COMPLAINT_REASON_LABELS, complaintReasonLabel, complaintStatusLabel,
   fetchComplaint, fetchComplaints, fetchComplaintStats, resolveComplaint, takeComplaint,
 } from "../../../api/complaintApi";
 import { formatRelative } from "../../../utils/format";
-import Pagination from "../user-management/Pagination";
-import ComplaintDetail, { STATUS_CLASS } from "./ComplaintDetail";
-import "../user-management/UserManagement.css"; // style phân trang dùng chung
-import "../worker-approval/WorkerApprovalPage.css"; // bố cục danh sách + chi tiết, hộp thoại dùng chung
-import "../wallets/WalletManagement.css"; // ô nhập (wl-input) dùng chung
-import "./Complaint.css";
+// import , { STATUS_CLASS } from "./ComplaintDetail";
+import ComplaintDetail, { STATUS_TONE } from "./ComplaintDetail";
+import { Pagination } from "@/components/admin/ui";
+import { StatusBadge } from "../../../components/admin/ui";
+
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
 const EMPTY_STATS = { PENDING: 0, PROCESSING: 0, RESOLVED: 0, REJECTED: 0, ALL: 0 };
@@ -40,19 +40,9 @@ export default function ComplaintPage() {
   const [detailError, setDetailError] = useState("");
 
   const [reloadKey, setReloadKey] = useState(0); // tăng lên để tải lại danh sách, số đếm và chi tiết sau khi xử lý
-  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
-  const noticeTimer = useRef(null);
-
-  const showNotice = useCallback((type, text) => {
-    setNotice({ type, text });
-    clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 6000);
-  }, []);
-  useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
-  // Sidebar nhận tin WebSocket (khiếu nại mới...) và phát lại sự kiện này -> tải lại danh sách + số đếm
   useEffect(() => {
     const onChanged = (e) => {
       if (e.detail?.type === "COMPLAINT_CREATED") showNotice("success", e.detail.message || "Có khiếu nại mới.");
@@ -60,7 +50,7 @@ export default function ComplaintPage() {
     };
     window.addEventListener("complaints:changed", onChanged);
     return () => window.removeEventListener("complaints:changed", onChanged);
-  }, [showNotice, reload]);
+  }, [reload]);
 
   // danh sách
   useEffect(() => {
@@ -74,7 +64,6 @@ export default function ComplaintPage() {
     return () => { cancelled = true; };
   }, [status, filters, page, reloadKey]);
 
-  // số đếm trên các tab
   useEffect(() => {
     let cancelled = false;
     fetchComplaintStats()
@@ -82,20 +71,17 @@ export default function ComplaintPage() {
         if (cancelled) return;
         const next = { ...EMPTY_STATS, ...res };
         setStats(next);
-        // cho Sidebar cập nhật huy hiệu số chờ xử lý mà không phải gọi lại API
         window.dispatchEvent(new CustomEvent("complaints:stats", { detail: next }));
       })
-      .catch(() => { /* số đếm chỉ để tham khảo, lỗi thì giữ số cũ */ });
+      .catch(() => { });
     return () => { cancelled = true; };
   }, [reloadKey]);
 
-  // chưa chọn gì (mới vào, đổi tab, đổi trang) -> chọn khiếu nại đầu tiên.
-  // Sau khi xử lý, khiếu nại có thể rời khỏi tab hiện tại nhưng vẫn giữ chọn để admin xem kết quả.
+ 
   useEffect(() => {
     if (selectedId == null && list.content.length > 0) setSelectedId(list.content[0].id);
   }, [list, selectedId]);
 
-  // chi tiết
   useEffect(() => {
     if (selectedId == null) { setDetail(null); return undefined; }
     let cancelled = false;
@@ -111,8 +97,7 @@ export default function ComplaintPage() {
   const resetSelection = () => {
     setSelectedId(null);
     setDetail(null);
-    setList(EMPTY_PAGE); // tránh tự chọn nhầm khiếu nại của danh sách cũ
-  };
+    setList(EMPTY_PAGE);
 
   const changeStatus = (value) => {
     if (value === status) return;
@@ -141,12 +126,11 @@ export default function ComplaintPage() {
     setFilters({ keyword: "", reason: "" });
   };
 
-  // Các hàm dưới ném lỗi lên khung chi tiết để hiển thị ngay tại đó
   const handleTake = async () => {
     try {
       await takeComplaint(selectedId);
     } catch (e) {
-      reload(); // vd: admin khác vừa nhận -> cập nhật lại trạng thái đang hiển thị
+      reload();
       throw e;
     }
     showNotice("success", `Đã nhận xử lý khiếu nại #${selectedId}.`);
@@ -173,13 +157,6 @@ export default function ComplaintPage() {
         <h1>Khiếu nại</h1>
         <p>Tiếp nhận và xử lý khiếu nại, tranh chấp giữa khách và thợ</p>
       </header>
-
-      {notice && (
-        <div className={`wa-notice wa-notice-${notice.type}`} role={notice.type === "error" ? "alert" : "status"}>
-          {notice.text}
-          <button type="button" onClick={() => setNotice(null)} aria-label="Đóng thông báo"><X size={18} aria-hidden="true" /></button>
-        </div>
-      )}
 
       <div className="wa-panel">
         <div className="wa-list">
@@ -275,8 +252,7 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
               <div className="wa-card-body">
                 <div className="cp-card-top">
                   <strong className="wa-card-name">#{c.id} | {c.requestCode}</strong>
-                  <span className={`wa-status ${STATUS_CLASS[c.status] ?? ""}`}>{complaintStatusLabel(c)}</span>
-                </div>
+                  <StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>                </div>
                 <span className="cp-reason">{complaintReasonLabel(c)}</span>
                 <p className="cp-card-desc">{c.description}</p>
                 <div className="wa-meta">
@@ -290,4 +266,4 @@ function ComplaintList({ items, loading, error, selectedId, onSelect }) {
       })}
     </ul>
   );
-}
+}}

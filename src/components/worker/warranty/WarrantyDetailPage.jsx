@@ -11,6 +11,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { getWarranty, rejectWarranty } from "../../../api/warrantyApi";
 import { parseApiError } from "../../../api/apiError";
+import { notifySuccess } from "../../../utils/notify";
 import { formatDate, formatDateTime, RESOLUTION_LABELS, slotRangeLabel } from "./warrantyFormat";
 
 const WarrantyDetailPage = () => {
@@ -53,6 +54,7 @@ const WarrantyDetailPage = () => {
     setError(null);
     try {
       await rejectWarranty(claimId, rejectReason.trim());
+      notifySuccess("Đã từ chối yêu cầu bảo hành.");
       navigate("/worker/warranty", { replace: true });
     } catch (err) {
       setError(

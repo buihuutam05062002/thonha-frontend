@@ -1,0 +1,128 @@
+/* Giao diện nạp ví. Dùng class riêng "tu-*" (không dùng .btn) vì .btn trong styles.css
+   (rộng 100%, cao 50px) sẽ đè lên nút nhỏ của Bootstrap và làm vỡ bố cục. */
+.tu { --tu-orange: #f5820d; --tu-orange-soft: #fff4e6; --tu-line: #e8ebf0; --tu-muted: #6b7280; --tu-ink: #172033; }
+
+.tu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 18px;
+  border: 1.5px solid var(--tu-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--tu-ink);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+.tu-btn:hover:not(:disabled) { background: #f8fafc; }
+.tu-btn:disabled { opacity: .55; cursor: not-allowed; }
+.tu-btn-primary { border-color: var(--tu-orange); background: var(--tu-orange); color: #fff; }
+.tu-btn-primary:hover:not(:disabled) { background: #e07409; }
+.tu-btn-block { width: 100%; }
+.tu-actions { display: flex; gap: 10px; margin-top: 18px; }
+.tu-actions .tu-btn { flex: 1; }
+
+/* --- Bước nhập số tiền --- */
+.tu-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--tu-ink); }
+.tu-input-wrap { position: relative; }
+.tu-input {
+  width: 100%;
+  height: 58px;
+  padding: 0 52px 0 18px;
+  border: 1.5px solid var(--tu-line);
+  border-radius: 14px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--tu-ink);
+}
+.tu-input:focus { outline: 0; border-color: var(--tu-orange); box-shadow: 0 0 0 4px rgba(245, 130, 13, .14); }
+.tu-input-suffix { position: absolute; top: 50%; right: 18px; transform: translateY(-50%); font-size: 18px; font-weight: 700; color: var(--tu-muted); }
+.tu-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.tu-chip {
+  height: 38px;
+  padding: 0 6px;
+  border: 1.5px solid var(--tu-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tu-ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tu-chip:hover { border-color: var(--tu-orange); background: var(--tu-orange-soft); }
+.tu-chip.active { border-color: var(--tu-orange); background: var(--tu-orange-soft); color: #b45309; }
+.tu-hint { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--tu-muted); }
+.tu-error { margin: 14px 0 0; padding: 10px 14px; border-radius: 10px; background: #fcecec; color: #b42318; font-size: 14px; font-weight: 600; }
+
+/* --- Bước quét QR --- */
+.tu-total { text-align: center; padding: 14px 12px; border-radius: 14px; background: var(--tu-orange-soft); }
+.tu-total small { display: block; font-size: 13px; color: var(--tu-muted); }
+.tu-total strong { display: block; margin-top: 2px; font-size: 30px; line-height: 1.2; font-weight: 800; color: var(--tu-orange); }
+.tu-qr { display: flex; justify-content: center; margin: 16px 0 4px; }
+.tu-qr img { width: 230px; height: 230px; padding: 8px; border: 1px solid var(--tu-line); border-radius: 16px; background: #fff; box-shadow: 0 6px 18px rgba(15, 23, 42, .08); }
+.tu-qr-note { margin: 8px 0 14px; text-align: center; font-size: 13px; color: var(--tu-muted); }
+
+.tu-info { border: 1px solid var(--tu-line); border-radius: 14px; overflow: hidden; }
+.tu-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; }
+.tu-row + .tu-row { border-top: 1px solid var(--tu-line); }
+.tu-row.must { background: #fffaf0; }
+.tu-row-text { min-width: 0; }
+.tu-row-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tu-muted); }
+.tu-row-value { margin-top: 1px; font-size: 16px; font-weight: 800; color: var(--tu-ink); word-break: break-all; }
+.tu-row.must .tu-row-value { color: #b45309; letter-spacing: .5px; }
+.tu-badge { padding: 1px 7px; border-radius: 999px; background: var(--tu-orange); color: #fff; font-size: 10px; font-weight: 700; }
+.tu-copy {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid var(--tu-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--tu-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tu-copy:hover { border-color: var(--tu-orange); }
+.tu-copy.done { border-color: #abefc6; background: #ecfdf3; color: #067647; }
+
+.tu-wait { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 11px 14px; border-radius: 12px; background: #f8fafc; font-size: 13px; line-height: 1.4; color: var(--tu-muted); }
+.tu-link { display: block; margin: 12px auto 0; padding: 6px 10px; border: 0; background: none; color: var(--tu-muted); font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+/* --- Thành công --- */
+.tu-done { text-align: center; padding: 18px 6px 4px; }
+.tu-done-icon { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 50%; background: #e6f6ec; color: #1e7e34; }
+.tu-done h6 { margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+.tu-done p { margin: 0 0 4px; font-size: 15px; }
+.tu-done .tu-balance { margin-bottom: 18px; font-size: 14px; color: var(--tu-muted); }
+
+/* Nút "Nạp tiền" trên thẻ số dư trong WalletModal */
+.wm-topup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  margin-top: 14px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: #b45309;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wm-topup-btn:hover { background: #fff7ed; }
+
+@media (max-width: 420px) {
+  .tu-chips { grid-template-columns: repeat(2, 1fr); }
+  .tu-total strong { font-size: 26px; }
+  .tu-qr img { width: 210px; height: 210px; }
+}

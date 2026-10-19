@@ -10,8 +10,8 @@ import { getAccessToken } from "./session";
  */
 export const WS_URL =
   import.meta.env.VITE_WS_URL ??
-  `${API_BASE_URL.replace(/^http/, "ws").replace(/\/api\/v\d+\/?$/, "")}/ws`;
-
+  `${(API_BASE_URL ?? "").replace(/^http/, "ws").replace(/\/api\/v\d+\/?$/, "")}/ws`;
+  
 function tokenExpiresSoon(token, skewSeconds = 60) {
   try {
     const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");

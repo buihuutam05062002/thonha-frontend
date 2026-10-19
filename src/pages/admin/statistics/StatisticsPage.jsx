@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { fetchAdminStatistics } from "../../../api/statisticsApi";
 import { formatPercent, formatVnd, toIsoDate } from "../../../utils/format";
-import "../worker-approval/WorkerApprovalPage.css"; // khung trang (wa-*)
-import "../commissions/Commission.css"; // panel, thẻ số liệu, nút chọn ngày, bảng (cm-*)
-import "./Statistics.css";
+import {
+  Card, DateRangeFilter, Empty, PageShell, Skeleton, StatCard, StatGrid, Table, Td, Th, cn,
+} from "../../../components/admin/ui";
 
 const MAX_DAYS = 366;
 
 const startOfToday = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-const daysBetween = (from, to) => Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
 
 const PRESETS = [
   { key: "7d", label: "7 ngày qua", range: () => ({ from: toIsoDate(addDays(startOfToday(), -6)), to: toIsoDate(startOfToday()) }) },
@@ -51,11 +50,7 @@ const shortDate = (iso) => { const [, m, d] = iso.split("-"); return `${d}/${m}`
 
 /** Trang Thống kê của admin: số liệu tổng hợp theo khoảng ngày, biểu đồ theo ngày, top danh mục / thợ. */
 export default function StatisticsPage() {
-  const [presetKey, setPresetKey] = useState("30d");
-  const [input, setInput] = useState(() => PRESETS[1].range());
-  const [applied, setApplied] = useState(() => PRESETS[1].range());
-  const [rangeError, setRangeError] = useState("");
-
+  const [applied, setApplied] = useState(() => PRESETS[1].range()); // khớp nút "30 ngày qua"
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,73 +66,14 @@ export default function StatisticsPage() {
     return () => { cancelled = true; };
   }, [applied]);
 
-  const applyPreset = (p) => {
-    const range = p.range();
-    setPresetKey(p.key);
-    setInput(range);
-    setApplied(range);
-    setRangeError("");
-  };
-
-  const applyCustom = (e) => {
-    e.preventDefault();
-    if (!input.from || !input.to) {
-      setRangeError("Vui lòng chọn đủ 'Từ ngày' và 'Đến ngày'");
-      return;
-    }
-    if (input.from > input.to) {
-      setRangeError("'Từ ngày' không được sau 'Đến ngày'");
-      return;
-    }
-    if (daysBetween(input.from, input.to) > MAX_DAYS) {
-      setRangeError(`Khoảng ngày tối đa là ${MAX_DAYS} ngày`);
-      return;
-    }
-    setRangeError("");
-    setPresetKey("custom");
-    setApplied({ from: input.from, to: input.to });
-  };
-
   return (
-    <section className="wa-page">
-      <header className="wa-header">
-        <h1>Thống kê</h1>
-        <p>Theo dõi người dùng, yêu cầu sửa chữa, doanh thu và khiếu nại của hệ thống</p>
-      </header>
+    <PageShell title="Thống kê" subtitle="Theo dõi người dùng, yêu cầu sửa chữa, doanh thu và khiếu nại của hệ thống">
+      <DateRangeFilter presets={PRESETS} initialKey="30d" requireRange maxDays={MAX_DAYS} onApply={setApplied} />
 
-      <div className="cm-panel">
-        <div className="cm-card">
-          <div className="cm-presets">
-            {PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                className={`cm-pill ${presetKey === p.key ? "active" : ""}`}
-                onClick={() => applyPreset(p)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <form className="cm-range" onSubmit={applyCustom} noValidate>
-            <label>
-              Từ ngày
-              <input type="date" value={input.from} max={input.to || undefined} onChange={(e) => setInput({ ...input, from: e.target.value })} />
-            </label>
-            <label>
-              Đến ngày
-              <input type="date" value={input.to} min={input.from || undefined} onChange={(e) => setInput({ ...input, to: e.target.value })} />
-            </label>
-            <button type="submit" className="wa-btn">Áp dụng</button>
-          </form>
-          {rangeError && <p className="cm-error" role="alert">{rangeError}</p>}
-        </div>
-
-        {error && <p className="cm-card wa-empty wa-error" role="alert">{error}</p>}
-        {!error && !data && loading && <div className="cm-skeleton" aria-busy="true" />}
-        {!error && data && <Content data={data} loading={loading} />}
-      </div>
-    </section>
+      {error && <Card><Empty error>{error}</Empty></Card>}
+      {!error && !data && loading && <Skeleton />}
+      {!error && data && <Content data={data} loading={loading} />}
+    </PageShell>
   );
 }
 
@@ -151,11 +87,11 @@ function Content({ data, loading }) {
     .filter((r) => r.count > 0);
 
   return (
-    <div className={`st-content ${loading ? "is-loading" : ""}`} aria-busy={loading}>
-      <div className="cm-stats">
+    <div className={cn("flex min-w-0 flex-col gap-16px transition-opacity", loading && "opacity-60")} aria-busy={loading}>
+      <StatGrid>
         <StatCard label="Tổng doanh thu" value={formatVnd(revenue.grossAmount)} sub={`${num(revenue.orders)} đơn đã chốt`} />
         <StatCard
-          label="Hoa hồng thu được" value={formatVnd(revenue.commissionAmount)} highlight
+          highlight label="Hoa hồng thu được" value={formatVnd(revenue.commissionAmount)}
           sub={effectiveRate != null ? `Bình quân ${formatPercent(effectiveRate)} doanh thu` : null}
         />
         <StatCard label="Yêu cầu sửa chữa" value={num(requests.total)} sub={`Hoàn thành ${formatPercent(requests.completionRate)}`} />
@@ -164,90 +100,69 @@ function Content({ data, loading }) {
           value={reviews.count > 0 ? `${reviews.averageRating.toFixed(2)} / 5` : "-"}
           sub={`${num(reviews.count)} lượt đánh giá`}
         />
-      </div>
+      </StatGrid>
 
-      <div className="cm-stats">
+      <StatGrid>
         <StatCard label="Khách hàng" value={num(users.totalCustomers)} sub={`+${num(users.newCustomers)} mới trong kỳ`} />
         <StatCard label="Thợ đã duyệt" value={num(users.approvedWorkers)} sub={`+${num(users.newWorkerProfiles)} hồ sơ mới trong kỳ`} />
         <StatCard label="Hồ sơ thợ chờ duyệt" value={num(users.pendingWorkerProfiles)} />
         <StatCard label="Khiếu nại chờ xử lý" value={num(complaints.PENDING)} sub={`${num(complaints.ALL)} khiếu nại tổng cộng`} />
-      </div>
+      </StatGrid>
 
-      <div className="cm-card">
-        <h2 className="cm-title">Yêu cầu sửa chữa theo ngày</h2>
-        <p className="cm-sub">Số yêu cầu mới tạo mỗi ngày</p>
+      <Card title="Yêu cầu sửa chữa theo ngày" subtitle="Số yêu cầu mới tạo mỗi ngày">
         <BarChart days={daily} valueOf={(d) => d.requests} format={num} unit="yêu cầu" />
-      </div>
+      </Card>
 
-      <div className="cm-card">
-        <h2 className="cm-title">Doanh thu theo ngày</h2>
-        <p className="cm-sub">Doanh thu của các đơn đã chốt, tính theo ngày chốt</p>
+      <Card title="Doanh thu theo ngày" subtitle="Doanh thu của các đơn đã chốt, tính theo ngày chốt">
         <BarChart days={daily} valueOf={(d) => Number(d.grossAmount)} format={formatVnd} unit="" />
-      </div>
+      </Card>
 
-      <div className="st-grid">
-        <div className="cm-card">
-          <h2 className="cm-title">Yêu cầu theo trạng thái</h2>
+      <div className="grid grid-cols-3 gap-12px max-[1100px]:grid-cols-1">
+        <Card title="Yêu cầu theo trạng thái">
           <HBars rows={statusRows} empty="Chưa có yêu cầu nào trong kỳ" />
-        </div>
-        <div className="cm-card">
-          <h2 className="cm-title">Danh mục được đặt nhiều nhất</h2>
+        </Card>
+        <Card title="Danh mục được đặt nhiều nhất">
           <HBars
             rows={topCategories.map((c) => ({ key: c.name, label: c.name, count: c.count }))}
             empty="Chưa có yêu cầu nào trong kỳ"
           />
-        </div>
-        <div className="cm-card">
-          <h2 className="cm-title">Khiếu nại theo trạng thái</h2>
-          <p className="cm-sub">Toàn hệ thống, không phụ thuộc khoảng ngày</p>
+        </Card>
+        <Card title="Khiếu nại theo trạng thái" subtitle="Toàn hệ thống, không phụ thuộc khoảng ngày">
           <HBars
             rows={COMPLAINT_LABELS.map((c) => ({ key: c.key, label: c.label, count: complaints[c.key] ?? 0 }))}
             empty="Chưa có khiếu nại nào"
           />
-        </div>
+        </Card>
       </div>
 
-      <div className="cm-card">
-        <h2 className="cm-title">Thợ có doanh thu cao nhất</h2>
+      <Card title="Thợ có doanh thu cao nhất">
         {topWorkers.length === 0 ? (
-          <p className="wa-empty">Chưa có đơn nào được chốt trong khoảng thời gian này</p>
+          <Empty>Chưa có đơn nào được chốt trong khoảng thời gian này</Empty>
         ) : (
-          <div className="cm-table-wrap">
-            <table className="cm-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Thợ</th>
-                  <th className="num">Số đơn</th>
-                  <th className="num">Doanh thu</th>
-                  <th className="num">Hoa hồng</th>
+          <Table>
+            <thead>
+              <tr>
+                <Th>#</Th>
+                <Th>Thợ</Th>
+                <Th num>Số đơn</Th>
+                <Th num>Doanh thu</Th>
+                <Th num>Hoa hồng</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {topWorkers.map((w, i) => (
+                <tr key={w.workerId}>
+                  <Td>{i + 1}</Td>
+                  <Td><b>{w.fullName}</b></Td>
+                  <Td num>{num(w.orders)}</Td>
+                  <Td num>{formatVnd(w.grossAmount)}</Td>
+                  <Td num className="font-bold text-brand-dark">{formatVnd(w.commissionAmount)}</Td>
                 </tr>
-              </thead>
-              <tbody>
-                {topWorkers.map((w, i) => (
-                  <tr key={w.workerId}>
-                    <td>{i + 1}</td>
-                    <td><b>{w.fullName}</b></td>
-                    <td className="num">{num(w.orders)}</td>
-                    <td className="num">{formatVnd(w.grossAmount)}</td>
-                    <td className="num cm-comm">{formatVnd(w.commissionAmount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </Table>
         )}
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub, highlight }) {
-  return (
-    <div className={`cm-stat ${highlight ? "cm-stat-hl" : ""}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {sub && <small>{sub}</small>}
+      </Card>
     </div>
   );
 }
@@ -255,30 +170,30 @@ function StatCard({ label, value, sub, highlight }) {
 /** Biểu đồ cột theo ngày bằng CSS thuần (không thêm thư viện). Di chuột / chạm vào cột để xem số liệu. */
 function BarChart({ days, valueOf, format, unit }) {
   const max = Math.max(0, ...days.map(valueOf));
-  if (max === 0) return <p className="wa-empty">Chưa có số liệu trong khoảng thời gian này</p>;
+  if (max === 0) return <Empty>Chưa có số liệu trong khoảng thời gian này</Empty>;
   const mid = days[Math.floor((days.length - 1) / 2)];
   return (
-    <div className="st-chart">
-      <div className="st-bars" role="img" aria-label="Biểu đồ cột theo ngày">
+    <div className="flex flex-col gap-1.5">
+      <div className="flex h-40 items-end gap-0.5 border-b border-line" role="img" aria-label="Biểu đồ cột theo ngày">
         {days.map((d) => {
           const v = valueOf(d);
           return (
             <div
               key={d.date}
-              className="st-bar-col"
+              className="group flex h-full min-w-[2px] flex-[1_1_0] items-end"
               title={`${shortDate(d.date)}: ${format(v)}${unit ? ` ${unit}` : ""}`}
             >
-              <span className="st-bar" style={{ height: `${(v / max) * 100}%` }} />
+              <span className="block min-h-0.5 w-full rounded-t-[3px] bg-brand/70 transition-colors group-hover:bg-brand" style={{ height: `${(v / max) * 100}%` }} />
             </div>
           );
         })}
       </div>
-      <div className="st-axis">
+      <div className="flex justify-between text-[11.5px] text-subtle">
         <span>{shortDate(days[0].date)}</span>
         {days.length > 2 && <span>{shortDate(mid.date)}</span>}
         <span>{shortDate(days[days.length - 1].date)}</span>
       </div>
-      <p className="cm-muted">Cao nhất: {format(max)}{unit ? ` ${unit}` : ""} / ngày</p>
+      <p className="m-0 text-xs text-subtle">Cao nhất: {format(max)}{unit ? ` ${unit}` : ""} / ngày</p>
     </div>
   );
 }
@@ -286,17 +201,17 @@ function BarChart({ days, valueOf, format, unit }) {
 /** Thanh ngang so sánh số lượng giữa các nhóm. */
 function HBars({ rows, empty }) {
   const max = Math.max(0, ...rows.map((r) => r.count));
-  if (max === 0) return <p className="wa-empty">{empty}</p>;
+  if (max === 0) return <Empty>{empty}</Empty>;
   return (
-    <ul className="st-hbars">
+    <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
       {rows.map((r) => (
         <li key={r.key}>
-          <div className="st-hbar-head">
-            <span>{r.label}</span>
+          <div className="mb-1 flex justify-between gap-2 text-[13px]">
+            <span className="min-w-0 break-words">{r.label}</span>
             <b>{num(r.count)}</b>
           </div>
-          <div className="st-hbar-track">
-            <span style={{ width: `${(r.count / max) * 100}%` }} />
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <span className="block h-full rounded-full bg-brand" style={{ width: `${(r.count / max) * 100}%` }} />
           </div>
         </li>
       ))}

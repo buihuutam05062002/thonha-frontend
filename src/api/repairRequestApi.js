@@ -78,7 +78,6 @@ export async function getRepairRequestById(id) {
   return transformRequest(request);
 }
 
-/** Huỷ yêu cầu (BE: PATCH /{id}/cancel - không phải DELETE) */
 export async function cancelRepairRequest(id) {
   const request = await axiosClient.patch(`/repair-requests/${id}/cancel`);
   return transformRequest(request);
@@ -92,7 +91,6 @@ export async function getWorkerLocation(id) {
   return (await axiosClient.get(`/repair-requests/${id}/worker-location`)) ?? null;
 }
 
-/** RepairRequestResponse (BE) -> object dùng cho UI */
 export function transformRequest(request) {
   if (!request) return request;
   return {
@@ -101,4 +99,8 @@ export function transformRequest(request) {
     addressText: request.addressText ?? request.address?.fullAddress,
     attachmentUrls: (request.attachments ?? []).map((a) => a.url).filter(Boolean),
   };
+}
+
+export async function fetchMySummary() {
+  return (await axiosClient.get("/repair-requests/my/summary")) ?? { pendingQuotations: [], awaitingReview: [] };
 }

@@ -1,66 +1,43 @@
 import { ROLES, USER_STATUSES } from "../../../api/userApi";
+import { Button, Card, FilterBar, PillSelect, SearchBox, Tabs } from "../../../components/admin/ui";
+
+const ROLE_TABS = [{ value: "", key: "all", label: "Tất cả" }, ...ROLES];
 
 export default function UserFilters({ filters, onChange, onSearch }) {
   const set = (patch) => onChange({ ...filters, ...patch });
 
-  return (
-    <div className="um-filters">
-      <div className="um-tabs" role="tablist">
-        {[{ value: "", label: "Tất cả" }, ...ROLES].map((r) => (
-          <button
-            key={r.value || "all"}
-            role="tab"
-            aria-selected={filters.role === r.value}
-            className={filters.role === r.value ? "active" : ""}
-            onClick={() => {
-              const next = { ...filters, role: r.value };
-              onChange(next);
-              onSearch(next);
-            }}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
+  const pickRole = (role) => {
+    const next = { ...filters, role };
+    onChange(next);
+    onSearch(next);
+  };
 
-      <form
-        className="um-filter-row"
+  return (
+    <Card>
+      <Tabs items={ROLE_TABS} value={filters.role} onChange={pickRole} label="Vai trò" />
+
+      <FilterBar
         onSubmit={(e) => {
           e.preventDefault();
           onSearch(filters);
         }}
       >
-        <input
-          type="search"
-          className="um-input"
+        <SearchBox
           placeholder="Tìm theo tên, email, số điện thoại"
+          aria-label="Từ khóa"
           value={filters.keyword}
           onChange={(e) => set({ keyword: e.target.value })}
         />
-        <select
-          className="um-select"
-          value={filters.role}
-          onChange={(e) => set({ role: e.target.value })}
-          aria-label="Vai trò"
-        >
+        <PillSelect value={filters.role} onChange={(e) => set({ role: e.target.value })} aria-label="Vai trò">
           <option value="">Vai trò: Tất cả</option>
-          {ROLES.map((r) => (
-            <option key={r.value} value={r.value}>{r.label}</option>
-          ))}
-        </select>
-        <select
-          className="um-select"
-          value={filters.userStatus}
-          onChange={(e) => set({ userStatus: e.target.value })}
-          aria-label="Trạng thái"
-        >
+          {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </PillSelect>
+        <PillSelect value={filters.userStatus} onChange={(e) => set({ userStatus: e.target.value })} aria-label="Trạng thái">
           <option value="">Trạng thái: Tất cả</option>
-          {USER_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </select>
-        <button type="submit" className="um-btn">Tìm kiếm</button>
-      </form>
-    </div>
+          {USER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </PillSelect>
+        <Button type="submit">Tìm kiếm</Button>
+      </FilterBar>
+    </Card>
   );
 }

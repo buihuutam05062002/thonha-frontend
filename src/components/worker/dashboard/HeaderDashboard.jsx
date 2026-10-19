@@ -1,8 +1,15 @@
+import { Dropdown } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { IconBell, IconSettings } from "../../icon/Index";
 import { useAuth } from "../../../auth/useAuth";
 
 export function HeaderDashboard({ onToggleNotif, pendingCount = 0 }) {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, hasRole, logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+    navigate("/worker", { replace: true });
+  };
   const fullName = user?.fullName || "Thợ Nhà";
   return (
     <header className="bg-white border-bottom sticky-top z-3 px-4 py-3 d-flex align-items-center justify-content-between">
@@ -32,9 +39,29 @@ export function HeaderDashboard({ onToggleNotif, pendingCount = 0 }) {
             </span>
           )}
         </button>
-        <button className="btn btn-light rounded-circle p-2 border-0" aria-label="Cài đặt" disabled title="Sắp ra mắt">
-          <IconSettings />
-        </button>
+        <Dropdown align="end">
+          <Dropdown.Toggle
+            as="button"
+            type="button"
+            bsPrefix="btn btn-light rounded-circle p-2 border-0"
+            aria-label="Tài khoản"
+            title="Tài khoản"
+          >
+            <IconSettings />
+          </Dropdown.Toggle>
+          <Dropdown.Menu className="shadow border-0 rounded-3">
+            <Dropdown.ItemText className="small text-muted text-truncate" style={{ maxWidth: 220 }}>
+              {fullName}
+            </Dropdown.ItemText>
+            <Dropdown.Divider />
+            {hasRole("CUSTOMER") && (
+              <Dropdown.Item onClick={() => navigate("/")}>Về trang khách hàng</Dropdown.Item>
+            )}
+            <Dropdown.Item className="text-danger" onClick={handleLogout}>
+              Đăng xuất
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
     </header>
   );

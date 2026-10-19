@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { notify as showNotice } from "../../../utils/notify";
 import {
   fetchWorkerProfiles, fetchWorkerProfileDetail, fetchWorkerProfileStats,
   approveWorkerProfile, rejectWorkerProfile,
 } from "../../../api/workerApprovalApi";
 import PendingTable from "./PendingTable";
 import ProfileDetail from "./ProfileDetail";
-import Pagination from "../user-management/Pagination";
-import "../user-management/UserManagement.css"; // dùng chung style phân trang
-import "./WorkerApprovalPage.css";
+import {
+  Button, FilterBar, ListPane, PageShell, Pagination, PillInput, SearchBox, SplitPanel, Tabs,
+} from "../../../components/admin/ui";
 
 const TABS = [
   { value: "PENDING", label: "Chờ duyệt", key: "pending" },
@@ -34,15 +34,6 @@ export default function WorkerApprovalPage() {
   const [detailError, setDetailError] = useState("");
 
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
-  const noticeTimer = useRef(null);
-
-  const showNotice = (type, text) => {
-    setNotice({ type, text });
-    clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 5000);
-  };
-  useEffect(() => () => clearTimeout(noticeTimer.current), []);
 
   const loadStats = useCallback(async () => {
     try { setStats(await fetchWorkerProfileStats()); } catch { /* số đếm không quan trọng bằng danh sách */ }
@@ -94,7 +85,7 @@ export default function WorkerApprovalPage() {
   const afterDecision = async (message) => {
     showNotice("success", message);
     setDetail(null);
-    setSelectedId(null); // loadList sẽ tự chọn hồ sơ kế tiếp
+    setSelectedId(null);
     await Promise.all([loadList(), loadStats()]);
   };
 
@@ -106,8 +97,7 @@ export default function WorkerApprovalPage() {
       return true;
     } catch (e) {
       showNotice("error", e.message);
-      loadList(); loadStats(); // hồ sơ có thể đã được admin khác xử lý
-      return false;
+      loadList(); loadStats();
     } finally {
       setBusy(false);
     }
@@ -130,59 +120,28 @@ export default function WorkerApprovalPage() {
 
   const hasFilter = filters.keyword || filters.city;
 
+  const tabItems = TABS.map((t) => ({ value: t.value, label: t.label, count: stats[t.key] }));
+
   return (
-    <section className="wa-page">
-      <header className="wa-header">
-        <h1>Duyệt hồ sơ thợ</h1>
-        <p>{stats.pending > 0 ? `Có ${stats.pending} hồ sơ đang chờ bạn xét duyệt` : "Không còn hồ sơ nào chờ duyệt"}</p>
-      </header>
+    <PageShell
+      title="Duyệt hồ sơ thợ"
+      subtitle={stats.pending > 0 ? `Có ${stats.pending} hồ sơ đang chờ bạn xét duyệt` : "Không còn hồ sơ nào chờ duyệt"}
+    >
+      <SplitPanel>
+        <ListPane>
+          <Tabs items={tabItems} value={status} onChange={changeStatus} label="Trạng thái hồ sơ" />
 
-      {notice && (
-        <div className={`wa-notice wa-notice-${notice.type}`} role={notice.type === "error" ? "alert" : "status"}>
-          {notice.text}
-          <button type="button" onClick={() => setNotice(null)} aria-label="Đóng thông báo"><X size={18} aria-hidden="true" /></button>
-        </div>
-      )}
-
-      <div className="wa-panel">
-        <div className="wa-list">
-          <div className="wa-tabs" role="tablist">
-            {TABS.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                role="tab"
-                aria-selected={status === t.value}
-                className={status === t.value ? "active" : ""}
-                onClick={() => changeStatus(t.value)}
-              >
-                {t.label} <span className="wa-count">{stats[t.key]}</span>
-              </button>
-            ))}
-          </div>
-
-          <form className="wa-filters" onSubmit={applyFilters}>
-            <div className="wa-search">
-              <Search size={14} aria-hidden="true" />
-              <input
-                value={keywordInput}
-                onChange={(e) => setKeywordInput(e.target.value)}
-                placeholder="Tìm theo tên, email, số điện thoại"
-                aria-label="Từ khóa"
-              />
-            </div>
-            <input
-              className="wa-city"
-              value={cityInput}
-              onChange={(e) => setCityInput(e.target.value)}
-              placeholder="Tỉnh/thành"
-              aria-label="Tỉnh/thành"
+          <FilterBar onSubmit={applyFilters}>
+            <SearchBox
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              placeholder="Tìm theo tên, email, số điện thoại"
+              aria-label="Từ khóa"
             />
-            <button type="submit" className="wa-btn">Tìm</button>
-            {(hasFilter || keywordInput || cityInput) && (
-              <button type="button" className="wa-btn wa-btn-ghost" onClick={resetFilters}>Xóa lọc</button>
-            )}
-          </form>
+            <PillInput value={cityInput} onChange={(e) => setCityInput(e.target.value)} placeholder="Tỉnh/thành" aria-label="Tỉnh/thành" />
+            <Button type="submit">Tìm</Button>
+            {(hasFilter || keywordInput || cityInput) && <Button variant="ghost" className="underline" onClick={resetFilters}>Xóa lọc</Button>}
+          </FilterBar>
 
           <PendingTable
             profiles={list.content}
@@ -193,7 +152,7 @@ export default function WorkerApprovalPage() {
           />
 
           <Pagination page={page} totalPages={list.totalPages} onChange={(p) => { setPage(p); setSelectedId(null); }} />
-        </div>
+        </ListPane>
 
         <ProfileDetail
           profile={detail}
@@ -203,7 +162,7 @@ export default function WorkerApprovalPage() {
           onApprove={handleApprove}
           onReject={handleReject}
         />
-      </div>
-    </section>
+      </SplitPanel>
+    </PageShell>
   );
 }

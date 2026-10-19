@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Phone, Clock, Search, AlertTriangle, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Phone, Clock, AlertTriangle } from "lucide-react";
+import { notify as showNotice } from "../../../utils/notify";
 import {
   adjustWallet, fetchWallet, fetchWalletTransactions, fetchWallets, topUpWallet,
 } from "../../../api/walletApi";
 import { formatRelative, formatVnd } from "../../../utils/format";
-import Pagination from "../user-management/Pagination";
+import {
+  Avatar, Button, Empty, FilterBar, ListCard, ListCardSkeleton, ListCards, ListPane, PageShell, Pagination,
+  SearchBox, SplitPanel, cn,
+} from "../../../components/admin/ui";
 import WalletDetail from "./WalletDetail";
-import "../user-management/UserManagement.css"; // style phân trang dùng chung
-import "../worker-approval/WorkerApprovalPage.css"; // bố cục danh sách + chi tiết, hộp thoại dùng chung
-import "./WalletManagement.css";
 
 const EMPTY_PAGE = { content: [], totalPages: 0, totalElements: 0 };
 const TX_PAGE_SIZE = 8;
@@ -32,16 +33,7 @@ export default function WalletManagementPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState("");
 
-  const [reloadKey, setReloadKey] = useState(0); // tăng lên để tải lại chi tiết + sổ cái sau khi đổi số dư
-  const [notice, setNotice] = useState(null); // { type: "success" | "error", text }
-  const noticeTimer = useRef(null);
-
-  const showNotice = (type, text) => {
-    setNotice({ type, text });
-    clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 6000);
-  };
-  useEffect(() => () => clearTimeout(noticeTimer.current), []);
+  const [reloadKey, setReloadKey] = useState(0); 
 
   const loadList = useCallback(async () => {
     setListLoading(true);
@@ -49,7 +41,6 @@ export default function WalletManagementPage() {
     try {
       const res = await fetchWallets({ ...filters, page });
       setList(res);
-      // giữ lựa chọn nếu ví vẫn còn trong trang, nếu không chọn ví đầu tiên
       setSelectedId((cur) => (res.content.some((w) => w.workerId === cur) ? cur : res.content[0]?.workerId ?? null));
     } catch (e) {
       setListError(e.message);
@@ -60,7 +51,7 @@ export default function WalletManagementPage() {
 
   useEffect(() => { loadList(); }, [loadList]);
 
-  // chi tiết ví
+
   useEffect(() => {
     if (!selectedId) { setDetail(null); return undefined; }
     let cancelled = false;
@@ -111,7 +102,6 @@ export default function WalletManagementPage() {
     setFilters({ keyword: "", negativeOnly: false });
   };
 
-  // Sau khi đổi số dư: về trang đầu của sổ cái (giao dịch mới nhất ở trên cùng) và tải lại danh sách
   const afterChange = (message) => {
     showNotice("success", message);
     setTxPage(0);
@@ -119,7 +109,6 @@ export default function WalletManagementPage() {
     loadList();
   };
 
-  // Các hàm dưới ném lỗi lên form để hiển thị ngay tại form (vd: mã tham chiếu bị trùng)
   const handleTopUp = async (payload) => {
     await topUpWallet(selectedId, payload);
     afterChange(`Đã nạp ${formatVnd(payload.amount)} vào ví của ${detail?.workerName ?? "thợ"}.`);
@@ -134,46 +123,34 @@ export default function WalletManagementPage() {
   const shownDetail = detail?.workerId === selectedId ? detail : null;
 
   return (
-    <section className="wa-page">
-      <header className="wa-header">
-        <h1>Ví thợ</h1>
-        <p>Theo dõi số dư hoa hồng, nạp tiền khi thợ nộp và điều chỉnh khi có sai sót</p>
-      </header>
+    <PageShell title="Ví thợ" subtitle="Theo dõi số dư hoa hồng, nạp tiền khi thợ nộp và điều chỉnh khi có sai sót">
+      <SplitPanel>
+        <ListPane>
+          <FilterBar first onSubmit={applyFilters}>
+            <SearchBox
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              placeholder="Tìm theo tên, email, số điện thoại"
+              aria-label="Từ khóa"
+            />
+            <Button type="submit">Tìm</Button>
+            {(hasFilter || keywordInput) && <Button variant="ghost" className="underline" onClick={resetFilters}>Xóa lọc</Button>}
+          </FilterBar>
 
-      {notice && (
-        <div className={`wa-notice wa-notice-${notice.type}`} role={notice.type === "error" ? "alert" : "status"}>
-          {notice.text}
-          <button type="button" onClick={() => setNotice(null)} aria-label="Đóng thông báo"><X size={18} aria-hidden="true" /></button>
-        </div>
-      )}
-
-      <div className="wa-panel">
-        <div className="wa-list">
-          <form className="wa-filters" onSubmit={applyFilters}>
-            <div className="wa-search">
-              <Search size={14} aria-hidden="true" />
-              <input
-                value={keywordInput}
-                onChange={(e) => setKeywordInput(e.target.value)}
-                placeholder="Tìm theo tên, email, số điện thoại"
-                aria-label="Từ khóa"
-              />
-            </div>
-            <button type="submit" className="wa-btn">Tìm</button>
-            {(hasFilter || keywordInput) && (
-              <button type="button" className="wa-btn wa-btn-ghost" onClick={resetFilters}>Xóa lọc</button>
-            )}
-          </form>
-
-          <label className="wl-check">
-            <input type="checkbox" checked={filters.negativeOnly} onChange={(e) => toggleNegative(e.target.checked)} />
+          <label className="mb-3.5 flex cursor-pointer items-center gap-2 text-[12.5px] text-ink">
+            <input
+              type="checkbox"
+              className="h-[15px] w-[15px] accent-brand"
+              checked={filters.negativeOnly}
+              onChange={(e) => toggleNegative(e.target.checked)}
+            />
             Chỉ hiện ví đang âm (thợ còn nợ hoa hồng)
           </label>
 
           <WalletList wallets={list.content} loading={listLoading} error={listError} selectedId={selectedId} onSelect={select} />
 
           <Pagination page={page} totalPages={list.totalPages} onChange={(p) => { setPage(p); setSelectedId(null); }} />
-        </div>
+        </ListPane>
 
         <WalletDetail
           key={selectedId ?? "none"}
@@ -188,52 +165,36 @@ export default function WalletManagementPage() {
           onTopUp={handleTopUp}
           onAdjust={handleAdjust}
         />
-      </div>
-    </section>
+      </SplitPanel>
+    </PageShell>
   );
 }
 
 function WalletList({ wallets, loading, error, selectedId, onSelect }) {
-  if (loading && wallets.length === 0) {
-    return (
-      <ul className="wa-cards" aria-busy="true">
-        {[0, 1, 2, 3].map((i) => <li key={i} className="wa-card wa-skeleton" />)}
-      </ul>
-    );
-  }
-  if (error) return <p className="wa-empty wa-error" role="alert">{error}</p>;
-  if (wallets.length === 0) return <p className="wa-empty">Không có ví nào phù hợp</p>;
+  if (loading && wallets.length === 0) return <ListCardSkeleton />;
+  if (error) return <Empty error>{error}</Empty>;
+  if (wallets.length === 0) return <Empty>Không có ví nào phù hợp</Empty>;
 
   return (
-    <ul className={`wa-cards ${loading ? "is-loading" : ""}`}>
-      {wallets.map((w) => {
-        const active = w.workerId === selectedId;
-        return (
-          <li key={w.workerId}>
-            <button
-              type="button"
-              className={`wa-card ${active ? "active" : ""}`}
-              onClick={() => onSelect(w.workerId)}
-              aria-current={active ? "true" : undefined}
-            >
-              <span className="wa-avatar wa-avatar-fallback">{w.workerName?.[0]?.toUpperCase() ?? "?"}</span>
-              <div className="wa-card-body">
-                <div className="wa-card-top">
-                  <strong className="wa-card-name">{w.workerName}</strong>
-                  <b className={`wl-amount ${Number(w.balance) < 0 ? "wl-neg" : ""}`}>{formatVnd(w.balance)}</b>
-                </div>
-                <div className="wa-meta">
-                  <span><Phone size={12} /> {w.workerPhone || "-"}</span>
-                  <span><Clock size={12} /> {formatRelative(w.updatedAt)}</span>
-                </div>
-                {!w.canReceiveJobs && (
-                  <div className="wa-warn"><AlertTriangle size={12} /> Tạm ngừng nhận đơn mới</div>
-                )}
-              </div>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+    <ListCards loading={loading}>
+      {wallets.map((w) => (
+        <ListCard key={w.workerId} active={w.workerId === selectedId} onClick={() => onSelect(w.workerId)}>
+          <Avatar name={w.workerName} />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <strong className="min-w-0 truncate text-sm text-ink">{w.workerName}</strong>
+              <b className={cn("whitespace-nowrap text-[13.5px]", Number(w.balance) < 0 ? "text-red-700" : "text-green-700")}>{formatVnd(w.balance)}</b>
+            </div>
+            <div className="flex flex-wrap gap-x-12px gap-y-1 text-[11.5px] text-subtle">
+              <span className="inline-flex items-center gap-1"><Phone size={12} aria-hidden="true" /> {w.workerPhone || "-"}</span>
+              <span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatRelative(w.updatedAt)}</span>
+            </div>
+            {!w.canReceiveJobs && (
+              <div className="flex items-start gap-1.5 text-xs text-red-700"><AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" /> Tạm ngừng nhận đơn mới</div>
+            )}
+          </div>
+        </ListCard>
+      ))}
+    </ListCards>
   );
 }

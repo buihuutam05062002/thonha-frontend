@@ -1,7 +1,15 @@
 import { Card } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../auth/useAuth";
 
 export function ApprovalPending({ status, reason, onResubmit }) {
   const rejected = status === "REJECTED";
+  const navigate = useNavigate();
+  const { hasRole, logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+    navigate("/worker", { replace: true });
+  };
 
   return (
     <div className="d-flex min-vh-100 bg-light align-items-center justify-content-center p-3">
@@ -27,6 +35,16 @@ export function ApprovalPending({ status, reason, onResubmit }) {
               Chỉnh sửa &amp; nộp lại hồ sơ
             </button>
           )}
+          <div className={`d-flex flex-column flex-sm-row gap-2 justify-content-center ${rejected ? "mt-3" : "mt-4"}`}>
+            {hasRole("CUSTOMER") && (
+              <button type="button" className="btn btn-outline-secondary rounded-pill px-4" onClick={() => navigate("/")}>
+                Về trang khách hàng
+              </button>
+            )}
+            <button type="button" className="btn btn-outline-dark rounded-pill px-4" onClick={handleLogout}>
+              Đăng xuất
+            </button>
+          </div>
         </Card.Body>
       </Card>
     </div>

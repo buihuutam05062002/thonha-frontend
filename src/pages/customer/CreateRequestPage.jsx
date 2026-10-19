@@ -3,6 +3,8 @@ import {useNavigate} from 'react-router-dom';
 import {
     ArrowLeft, Camera, Check, Droplet, Loader2, LocateFixed, Refrigerator, Sparkles, WashingMachine, Wind, Wrench, X, Zap,
 } from 'lucide-react';
+import {notify, notifyError} from '../../utils/notify';
+import {validateStep} from '../../validation/CreateRequestSchema';
 import {createRepairRequest} from '../../api/repairRequestApi';
 import {classifyIncident} from '../../api/aiApi';
 import {stepperTrackStyle, stepperFillStyle} from '../../utils/stepper';
@@ -48,7 +50,8 @@ export default function CreateRequestPage() {
     const [catState, setCatState] = useState('loading');
     const [media, setMedia] = useState([]);
     const [mediaError, setMediaError] = useState('');
-    const [error, setError] = useState('');
+    // Lỗi nhập liệu theo ô: { categoryId, description, addressSnapshot }. Lỗi API thì dùng toast.
+    const [fieldErrors, setFieldErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
 
@@ -117,7 +120,7 @@ export default function CreateRequestPage() {
             })
             .catch(() => {
                 if (mounted) {
-                    setError('Không tải được địa chỉ đã lưu');
+                    notify('error', 'Không tải được địa chỉ đã lưu');
                 }
             })
             .finally(() => {
@@ -137,7 +140,7 @@ export default function CreateRequestPage() {
     
     const setField = (name, value) => {
         setForm((f) => ({...f, [name]: value}));
-        setError('');
+        setFieldErrors((errs) => (errs[name] ? {...errs, [name]: undefined} : errs));
     };
 
     function addFiles(fileList) {
@@ -215,39 +218,38 @@ export default function CreateRequestPage() {
         if (aiResult?.summary) setField('description', aiResult.summary.slice(0, 2000));
     }
 
-    function validate(n) {
-        if (n === 1 && !form.categoryId) return 'Vui lòng chọn danh mục dịch vụ';
-        if (n === 2 && form.description.trim().length < 10) return 'Mô tả cần ít nhất 10 ký tự để thợ hiểu sự cố';
-        if (n === 3 && !form.addressSnapshot.trim()) return 'Vui lòng nhập địa chỉ cần sửa';
-        return '';
-    }
-
     function next() {
-        const e = validate(step);
+        const e = validateStep(step, form);
         if (e) {
-            setError(e);
+            setFieldErrors({[e.field]: e.message});
             return;
         }
-        setError('');
+        setFieldErrors({});
         setStep((s) => s + 1);
     }
 
     function back() {
-        setError('');
+        setFieldErrors({});
         setStep((s) => Math.max(1, s - 1));
+    }
+
+    // Nhảy thẳng tới bước cần sửa (dùng cho nút "Sửa" ở bước kiểm tra). Dữ liệu đã nhập vẫn được giữ.
+    function goToStep(n) {
+        setFieldErrors({});
+        setStep(n);
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     async function submit() {
         for (let n = 1; n <= 3; n += 1) {
-            const e = validate(n);
+            const e = validateStep(n, form);
             if (e) {
                 setStep(n);
-                setError(e);
+                setFieldErrors({[e.field]: e.message});
                 return;
             }
         }
         setSubmitting(true);
-        setError('');
         try {
 
             const data = {
@@ -262,7 +264,7 @@ export default function CreateRequestPage() {
             const res = await createRepairRequest(data, media.map((m) => m.file));
             setResult(res);
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         } finally {
             setSubmitting(false);
         }
@@ -274,7 +276,7 @@ export default function CreateRequestPage() {
         setMediaError('');
         setForm(EMPTY_FORM);
         setResult(null);
-        setError('');
+        setFieldErrors({});
         setAiResult(null);
         setAiError('');
         setStep(1);
@@ -313,7 +315,7 @@ export default function CreateRequestPage() {
             setField('lat', detail.lat);
             setField('lng', detail.lng);
         } catch {
-            setError('Không lấy được toạ độ, bạn thử chọn lại gợi ý khác');
+            notify('error', 'Không lấy được toạ độ, bạn thử chọn lại gợi ý khác');
         }
     }
 
@@ -322,7 +324,6 @@ export default function CreateRequestPage() {
     
     async function useMyLocation() {
         setLocating(true);
-        setError('');
         try {
             const {lat, lng} = await getCurrentPosition();
             const text = await reverseGeocode(lat, lng);
@@ -332,9 +333,9 @@ export default function CreateRequestPage() {
             if (text) setField('addressSnapshot', text);
             setField('lat', lat);
             setField('lng', lng);
-            if (!text) setError('Đã lấy được vị trí nhưng chưa tìm ra tên địa chỉ, bạn hãy nhập địa chỉ thủ công');
+            if (!text) setFieldErrors((errs) => ({...errs, addressSnapshot: 'Đã lấy được vị trí nhưng chưa tìm ra tên địa chỉ, bạn hãy nhập địa chỉ thủ công'}));
         } catch (e) {
-            setError(e.message);
+            notifyError(e);
         } finally {
             setLocating(false);
         }
@@ -416,6 +417,7 @@ export default function CreateRequestPage() {
                                     })}
                                 </div>
                             )}
+                            {fieldErrors.categoryId && <p className="error" role="alert">{fieldErrors.categoryId}</p>}
                         </section>
                     )}
 
@@ -432,6 +434,7 @@ export default function CreateRequestPage() {
                                 value={form.description}
                                 onChange={(e) => setField('description', e.target.value)}
                             />
+                            {fieldErrors.description && <p className="error" role="alert">{fieldErrors.description}</p>}
                             <p className="counter">{form.description.length}/2000</p>
 
                             <span className="label">Hình ảnh hoặc video (không bắt buộc)</span>
@@ -725,6 +728,7 @@ export default function CreateRequestPage() {
                                                 </ul>
                                             )}
                                     </div>
+                                    {fieldErrors.addressSnapshot && <p className="error" role="alert">{fieldErrors.addressSnapshot}</p>}
 
                                     <button
                                         type="button"
@@ -754,34 +758,38 @@ export default function CreateRequestPage() {
                             <h2>Kiểm tra lại yêu cầu</h2>
                             <dl className="summary">
                                 <div>
-                                    <dt>Thiết bị</dt>
+                                    <dt>Thiết bị<button type="button" className="summary-edit" onClick={() => goToStep(1)}>Sửa</button></dt>
                                     <dd>{category?.name}</dd>
                                 </div>
                                 <div>
-                                    <dt>Sự cố</dt>
+                                    <dt>Sự cố<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{form.description.trim()}</dd>
                                 </div>
                                 <div>
-                                    <dt>Mức độ</dt>
+                                    <dt>Mức độ<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{form.mucDoUuTien === 'URGENT' ? 'Khẩn cấp' : 'Thường'}</dd>
                                 </div>
                                 <div>
-                                    <dt>Đính kèm</dt>
+                                    <dt>Đính kèm<button type="button" className="summary-edit" onClick={() => goToStep(2)}>Sửa</button></dt>
                                     <dd>{media.length ? `${media.length} tệp` : 'Không có'}</dd>
                                 </div>
                                 <div>
-                                    <dt>Địa chỉ</dt>
+                                    <dt>Địa chỉ<button type="button" className="summary-edit" onClick={() => goToStep(3)}>Sửa</button></dt>
                                     <dd>{form.addressSnapshot.trim()}</dd>
                                 </div>
                             </dl>
-                            <p className="hint">Bấm nút quay lại nếu cần sửa thông tin ở bước trước.</p>
+                            <p className="hint">Cần chỉnh thông tin? Bấm "Sửa" ở từng mục hoặc nút "Quay lại".</p>
                         </section>
                     )}
 
-                    {error && <p className="error" role="alert">{error}</p>}
                 </div>
 
                 <div className="footer">
+                    {step > 1 && (
+                        <button type="button" className="btn secondary" onClick={back} disabled={submitting}>
+                            Quay lại
+                        </button>
+                    )}
                     {step < TOTAL_STEPS ? (
                         <button type="button" className="btn primary" onClick={next}>Tiếp tục</button>
                     ) : (

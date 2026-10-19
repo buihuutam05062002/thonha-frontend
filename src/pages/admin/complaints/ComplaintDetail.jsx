@@ -2,30 +2,49 @@ import { useState } from "react";
 import { Phone, Clock, UserCog, CheckCircle2, XCircle } from "lucide-react";
 import { complaintReasonLabel, complaintStatusLabel } from "../../../api/complaintApi";
 import { formatDateTime, formatVnd } from "../../../utils/format";
-import { ConfirmDialog } from "../wallets/WalletForms";
+import {
+  Button, ConfirmDialog, DetailHeader, DetailMessage, DetailPane, DetailSection, ErrorText, Fields,
+  Note, StatusBadge, Textarea, cn,
+} from "../../../components/admin/ui";
 
-export const STATUS_CLASS = {
-  PENDING: "wa-status-pending",
-  PROCESSING: "cp-status-processing",
-  RESOLVED: "wa-status-approved",
-  REJECTED: "wa-status-rejected",
+export const STATUS_TONE = {
+  PENDING: "pending",
+  PROCESSING: "info",
+  RESOLVED: "success",
+  REJECTED: "danger",
 };
 
 const RESOLUTION_MAX = 2000;
 const ROLE_LABEL = { CUSTOMER: "Khách", WORKER: "Thợ" };
 
+function Tag({ children }) {
+  return <span className="ml-1.5 inline-block rounded-full bg-brand-soft px-2 py-px text-[11px] font-semibold text-brand-dark">{children}</span>;
+}
+
 function Party({ title, party, tag }) {
   return (
-    <div>
-      <small>{title}</small>
-      <strong>
+    <div className="min-w-0 rounded-xl border-[1px] border-line bg-surface px-12px py-2.5 text-[13px]">
+      <small className="mb-0.5 block text-[11.5px] text-subtle">{title}</small>
+      <strong className="block text-ink">
         {party?.fullName ?? "-"}
-        {tag && <span className="cp-tag">{tag}</span>}
+        {tag && <Tag>{tag}</Tag>}
       </strong>
-      <span><Phone size={12} /> {party?.phoneNumber || "-"}</span>
+      <span className="mt-1 flex items-center gap-1 text-subtle"><Phone size={12} aria-hidden="true" /> {party?.phoneNumber || "-"}</span>
     </div>
   );
 }
+
+const BOX = {
+  default: "border-[1px] border-line bg-surface",
+  resolved: "bg-green-50",
+  rejected: "bg-red-50",
+};
+
+function TextBox({ tone = "default", children }) {
+  return <div className={cn("rounded-xl px-12px py-2.5", BOX[tone])}>{children}</div>;
+}
+
+const TEXT = "m-0 whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-ink";
 
 /** Form kết luận: chọn giải quyết / từ chối + nội dung, có hộp xác nhận vì đóng rồi không sửa được. */
 function ResolveForm({ onSubmit, onClose }) {
@@ -57,47 +76,45 @@ function ResolveForm({ onSubmit, onClose }) {
 
   const resolved = status === "RESOLVED";
 
+  const choice = (active, activeClass) =>
+    cn(
+      "flex-1 cursor-pointer rounded-xl border-[1px] px-2.5 py-[9px] text-[13px] font-semibold transition-colors",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+      active ? activeClass : "border-line bg-white text-ink hover:bg-slate-50",
+    );
+
   return (
-    <form className="cp-form" onSubmit={submit}>
-      <h3>Kết luận khiếu nại</h3>
-      <div className="cp-choice-row" role="radiogroup" aria-label="Kết quả xử lý">
-        <button
-          type="button" role="radio" aria-checked={resolved}
-          className={`cp-choice ${resolved ? "active-resolved" : ""}`}
-          onClick={() => setStatus("RESOLVED")}
-        >
+    <form className="flex flex-col gap-2 rounded-[14px] border-[1px] border-line bg-surface p-16px" onSubmit={submit}>
+      <h3 className="m-0 mb-1 text-[15px] font-bold text-brand-dark">Kết luận khiếu nại</h3>
+      <div className="flex gap-2" role="radiogroup" aria-label="Kết quả xử lý">
+        <button type="button" role="radio" aria-checked={resolved} className={choice(resolved, "border-green-600 bg-green-600 text-white")} onClick={() => setStatus("RESOLVED")}>
           Giải quyết
         </button>
-        <button
-          type="button" role="radio" aria-checked={!resolved}
-          className={`cp-choice ${!resolved ? "active-rejected" : ""}`}
-          onClick={() => setStatus("REJECTED")}
-        >
+        <button type="button" role="radio" aria-checked={!resolved} className={choice(!resolved, "border-red-500 bg-red-500 text-white")} onClick={() => setStatus("REJECTED")}>
           Từ chối
         </button>
       </div>
 
-      <label htmlFor="cp-resolution">Nội dung kết luận</label>
-      <textarea
+      <label htmlFor="cp-resolution" className="mt-1 text-[13px] font-semibold text-ink">Nội dung kết luận</label>
+      <Textarea
         id="cp-resolution"
-        className="wl-input wl-textarea"
         rows={5}
         maxLength={RESOLUTION_MAX}
         value={resolution}
         onChange={(e) => setResolution(e.target.value)}
         placeholder={resolved ? "Cách giải quyết, các bên cần làm gì tiếp theo..." : "Lý do từ chối khiếu nại..."}
       />
-      <div className="cp-counter">{resolution.length}/{RESOLUTION_MAX}</div>
+      <div className="text-right text-[11.5px] text-subtle">{resolution.length}/{RESOLUTION_MAX}</div>
 
-      <p className="cp-note">
+      <Note>
         Kết luận được gửi cho người khiếu nại và không thể sửa sau khi đóng. Việc hoàn tiền / điều chỉnh ví
         (nếu có) chưa xử lý ở đây, hãy ghi rõ trong nội dung.
-      </p>
-      {error && <p className="cp-form-error" role="alert">{error}</p>}
+      </Note>
+      <ErrorText>{error}</ErrorText>
 
-      <div className="wa-actions">
-        <button type="button" className="wa-cancel" onClick={onClose}>Hủy</button>
-        <button type="submit" className="wa-approve">Tiếp tục</button>
+      <div className="flex gap-2.5">
+        <Button variant="neutral" size="lg" className="flex-1" onClick={onClose}>Hủy</Button>
+        <Button type="submit" size="lg" className="flex-1">Tiếp tục</Button>
       </div>
 
       {confirming && (
@@ -122,11 +139,9 @@ export default function ComplaintDetail({ data, loading, error, onTake, onResolv
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  if (loading && !data) {
-    return <aside className="wa-detail wa-empty" aria-busy="true">Đang tải khiếu nại...</aside>;
-  }
-  if (error) return <aside className="wa-detail wa-empty wa-error" role="alert">{error}</aside>;
-  if (!data) return <aside className="wa-detail wa-empty">Chọn một khiếu nại để xem chi tiết</aside>;
+  if (loading && !data) return <DetailMessage busy>Đang tải khiếu nại...</DetailMessage>;
+  if (error) return <DetailMessage error>{error}</DetailMessage>;
+  if (!data) return <DetailMessage>Chọn một khiếu nại để xem chi tiết</DetailMessage>;
 
   const { complaint: c, request, customer, worker, payment } = data;
   const byCustomer = c.complainantRole === "CUSTOMER";
@@ -146,103 +161,115 @@ export default function ComplaintDetail({ data, loading, error, onTake, onResolv
     }
   };
 
-  return (
-    <aside className="wa-detail">
-      <div className="wa-detail-header">
-        <h2>Khiếu nại <small>#{c.id}</small></h2>
-        <span className={`wa-status ${STATUS_CLASS[c.status] ?? ""}`}>{complaintStatusLabel(c)}</span>
-      </div>
+  const actionBar = "sticky bottom-[-20px] mt-[18px] flex flex-col gap-2.5 border-t border-line bg-white pb-1 pt-12px max-[1100px]:bottom-0";
 
-      <section className="wa-section">
-        <h3>Nội dung khiếu nại</h3>
-        <dl className="wa-fields">
-          <dt>Lý do</dt><dd>{complaintReasonLabel(c)}</dd>
-          <dt>Người gửi</dt>
-          <dd>{c.complainantName}<span className="cp-tag">{ROLE_LABEL[c.complainantRole]}</span></dd>
-          <dt>Bị khiếu nại</dt><dd>{c.againstName ?? "-"}</dd>
-          <dt>Gửi lúc</dt><dd><Clock size={12} /> {formatDateTime(c.createdAt)}</dd>
-        </dl>
-        <div className="cp-box"><p className="cp-text">{c.description || "-"}</p></div>
+  return (
+    <DetailPane>
+      <DetailHeader
+        title="Khiếu nại"
+        sub={`#${c.id}`}
+        aside={<StatusBadge tone={STATUS_TONE[c.status]}>{complaintStatusLabel(c)}</StatusBadge>}
+      />
+
+      <DetailSection title="Nội dung khiếu nại">
+        <Fields
+          rows={[
+            ["Lý do", complaintReasonLabel(c)],
+            ["Người gửi", <>{c.complainantName}<Tag>{ROLE_LABEL[c.complainantRole]}</Tag></>],
+            ["Bị khiếu nại", c.againstName ?? "-"],
+            ["Gửi lúc", <span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> {formatDateTime(c.createdAt)}</span>],
+          ]}
+        />
+        <TextBox><p className={TEXT}>{c.description || "-"}</p></TextBox>
 
         {c.images?.length > 0 && (
-          <div className="wa-gallery" style={{ marginTop: 10 }}>
+          <div className="mt-2.5 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2.5">
             {c.images.map((url, i) => (
-              <a key={url} className="wa-thumb" href={url} target="_blank" rel="noreferrer noopener">
-                <img src={url} alt={`Ảnh bằng chứng ${i + 1}`} loading="lazy" />
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="block overflow-hidden rounded-xl border-[1px] border-line bg-white no-underline hover:border-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <img src={url} alt={`Ảnh bằng chứng ${i + 1}`} loading="lazy" className="block h-24 w-full bg-slate-100 object-cover" />
               </a>
             ))}
           </div>
         )}
-      </section>
+      </DetailSection>
 
-      <section className="wa-section">
-        <h3>Đơn sửa chữa <small>{request.requestCode}</small></h3>
-        <dl className="wa-fields">
-          <dt>Dịch vụ</dt><dd>{request.categoryName}</dd>
-          <dt>Trạng thái đơn</dt><dd>{request.statusLabel}</dd>
-          <dt>Địa chỉ</dt><dd>{request.addressText || "-"}</dd>
-          <dt>Giá chốt</dt><dd>{request.finalPrice != null ? formatVnd(request.finalPrice) : "-"}</dd>
-          <dt>Mô tả đơn</dt><dd>{request.description}</dd>
-        </dl>
-        <div className="cp-party">
+      <DetailSection title="Đơn sửa chữa" sub={request.requestCode}>
+        <Fields
+          rows={[
+            ["Dịch vụ", request.categoryName],
+            ["Trạng thái đơn", request.statusLabel],
+            ["Địa chỉ", request.addressText || "-"],
+            ["Giá chốt", request.finalPrice != null ? formatVnd(request.finalPrice) : "-"],
+            ["Mô tả đơn", request.description],
+          ]}
+        />
+        <div className="grid grid-cols-2 gap-2.5 max-[720px]:grid-cols-1">
           <Party title="Khách" party={customer} tag={byCustomer ? "Người gửi" : null} />
           <Party title="Thợ" party={worker} tag={!byCustomer ? "Người gửi" : null} />
         </div>
-      </section>
+      </DetailSection>
 
       {payment && (
-        <section className="wa-section">
-          <h3>Thanh toán</h3>
-          <dl className="wa-fields">
-            <dt>Tổng tiền</dt><dd>{formatVnd(payment.amount)}</dd>
-            <dt>Hoa hồng</dt><dd>{formatVnd(payment.commissionAmount)}</dd>
-            <dt>Thợ nhận</dt><dd>{formatVnd(payment.workerAmount)}</dd>
-            <dt>Hình thức</dt><dd>{payment.paymentMethod}</dd>
-          </dl>
-        </section>
+        <DetailSection title="Thanh toán">
+          <Fields
+            rows={[
+              ["Tổng tiền", formatVnd(payment.amount)],
+              ["Hoa hồng", formatVnd(payment.commissionAmount)],
+              ["Thợ nhận", formatVnd(payment.workerAmount)],
+              ["Hình thức", payment.paymentMethod],
+            ]}
+          />
+        </DetailSection>
       )}
 
       {(c.handledByName || closed) && (
-        <section className="wa-section wa-history">
-          <h3>Xử lý</h3>
-          {c.handledByName && <p><UserCog size={13} /> Admin phụ trách: <b>{c.handledByName}</b>{mine ? " (bạn)" : ""}</p>}
-          {closed && (
-            <div className={`cp-box ${c.status === "RESOLVED" ? "cp-box-resolved" : "cp-box-rejected"}`}>
-              <p className="cp-text">{c.resolution}</p>
-              <small>
-                {c.status === "RESOLVED" ? <CheckCircle2 size={11} /> : <XCircle size={11} />} {formatDateTime(c.resolvedAt)}
-              </small>
-            </div>
+        <DetailSection title="Xử lý">
+          {c.handledByName && (
+            <p className="m-0 mb-1.5 flex items-center gap-1 text-[13px] text-ink">
+              <UserCog size={13} aria-hidden="true" /> Admin phụ trách: <b>{c.handledByName}</b>{mine ? " (bạn)" : ""}
+            </p>
           )}
-        </section>
+          {closed && (
+            <TextBox tone={c.status === "RESOLVED" ? "resolved" : "rejected"}>
+              <p className={TEXT}>{c.resolution}</p>
+              <small className="mt-1.5 flex items-center gap-1 text-[11.5px] text-subtle">
+                {c.status === "RESOLVED" ? <CheckCircle2 size={11} aria-hidden="true" /> : <XCircle size={11} aria-hidden="true" />} {formatDateTime(c.resolvedAt)}
+              </small>
+            </TextBox>
+          )}
+        </DetailSection>
       )}
 
-      {actionError && <p className="cp-form-error" role="alert" style={{ marginTop: 12 }}>{actionError}</p>}
+      <ErrorText>{actionError}</ErrorText>
 
       {c.status === "PENDING" && (
-        <div className="wa-action-bar">
-          <div className="wa-actions">
-            <button type="button" className="wa-approve" disabled={busy} onClick={() => setConfirmTake(true)}>
-              Nhận xử lý
-            </button>
+        <div className={actionBar}>
+          <div className="flex gap-2.5">
+            <Button size="lg" className="flex-1" disabled={busy} onClick={() => setConfirmTake(true)}>Nhận xử lý</Button>
           </div>
         </div>
       )}
 
       {c.status === "PROCESSING" && mine && (
-        <div className="wa-action-bar">
+        <div className={actionBar}>
           {resolving ? (
             <ResolveForm onSubmit={onResolve} onClose={() => setResolving(false)} />
           ) : (
-            <div className="wa-actions">
-              <button type="button" className="wa-approve" onClick={() => setResolving(true)}>Kết luận</button>
+            <div className="flex gap-2.5">
+              <Button size="lg" className="flex-1" onClick={() => setResolving(true)}>Kết luận</Button>
             </div>
           )}
         </div>
       )}
 
       {c.status === "PROCESSING" && !mine && (
-        <p className="wa-muted" style={{ marginTop: 14 }}>Khiếu nại đang do admin khác xử lý.</p>
+        <p className="m-0 mt-3.5 text-xs text-subtle">Khiếu nại đang do admin khác xử lý.</p>
       )}
 
       {confirmTake && (
@@ -255,6 +282,6 @@ export default function ComplaintDetail({ data, loading, error, onTake, onResolv
           onCancel={() => setConfirmTake(false)}
         />
       )}
-    </aside>
+    </DetailPane>
   );
 }

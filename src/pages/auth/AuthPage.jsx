@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {ArrowLeft, CheckCircle2, LogIn, UserPlus} from 'lucide-react';
+import {ArrowLeft, CheckCircle2, Eye, EyeOff, LogIn, UserPlus} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import logoImg from '../../assets/logo.png';
 import {login, register} from '../../api/authApi';
@@ -7,7 +7,9 @@ import {saveSession} from '../../api/session';
 
 export default function AuthPage({onAuthenticated}) {
     const [mode, setMode] = useState('login');
-    const [form, setForm] = useState({fullName: '', account: '', email: '', phoneNumber: '', password: ''});
+    const [form, setForm] = useState({fullName: '', account: '', email: '', phoneNumber: '', password: '', confirmPassword: ''});
+    const [showPassword, setShowPassword] = useState(false);
+    const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const change = (k, v) => {
@@ -17,15 +19,29 @@ export default function AuthPage({onAuthenticated}) {
 
     async function submit(e) {
         e.preventDefault();
-        setLoading(true);
         setError('');
+        if (mode === 'register' && form.password !== form.confirmPassword) {
+            setError('Mật khẩu xác nhận không khớp');
+            return;
+        }
+        setLoading(true);
         try {
-            const data = mode === 'login'
-                ? {account: form.account, password: form.password}
-                : {fullName: form.fullName, email: form.email, phoneNumber: form.phoneNumber, password: form.password};
-            const res = mode === 'login' ? await login(data) : await register(data);
-            saveSession(res); // phiên đổi -> AuthRoute tự chuyển hướng
-            onAuthenticated?.(res.user);
+            if (mode === 'login') {
+                const res = await login({account: form.account, password: form.password});
+                saveSession(res);
+                onAuthenticated?.(res.user);
+            } else {
+                const res = await register({
+                    fullName: form.fullName, email: form.email,
+                    phoneNumber: form.phoneNumber, password: form.password
+                });
+                // Hiện thông báo trước rồi mới lưu phiên: lưu phiên xong App sẽ chuyển khỏi trang này ngay
+                setSuccess('Tạo tài khoản thành công! Đang đăng nhập cho bạn...');
+                setTimeout(() => {
+                    saveSession(res);
+                    onAuthenticated?.(res.user);
+                }, 1500);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -73,29 +89,57 @@ export default function AuthPage({onAuthenticated}) {
                     {mode === 'register' && <><label className="label">Họ và tên<input className="input"
                                                                                        value={form.fullName}
                                                                                        onChange={e => change('fullName', e.target.value)}
-                                                                                       placeholder="Nguyễn Văn A"
+                                                                                       placeholder=""
                                                                                        required/></label><label
                         className="label">Email<input className="input" type="email" value={form.email}
                                                       onChange={e => change('email', e.target.value)}
-                                                      placeholder="ban@example.com"/></label><label className="label">Số
+                                                      placeholder=""/></label><label className="label">Số
                         điện thoại<input className="input" value={form.phoneNumber}
                                          onChange={e => change('phoneNumber', e.target.value)}
-                                         placeholder="0901234567"/></label></>}
+                                         placeholder=""/></label></>}
                     {mode === 'login' &&
                         <label className="label">Email hoặc số điện thoại<input className="input" value={form.account}
                                                                                 onChange={e => change('account', e.target.value)}
                                                                                 placeholder="Email hoặc 090..."
                                                                                 autoComplete="username"
                                                                                 required/></label>}
-                    <label className="label">Mật khẩu<input className="input" type="password" minLength="6"
-                                                            value={form.password}
-                                                            onChange={e => change('password', e.target.value)}
-                                                            placeholder="Tối thiểu 6 ký tự"
-                                                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                                                            required/></label>
+                    <label className="label">Mật khẩu
+                        <div style={{position: 'relative'}}>
+                            <input className="input" type={showPassword ? 'text' : 'password'} minLength="6"
+                                   value={form.password}
+                                   onChange={e => change('password', e.target.value)}
+                                   placeholder="Tối thiểu 6 ký tự"
+                                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                                   style={{paddingRight: 44}}
+                                   required/>
+                            <button type="button" onClick={() => setShowPassword(s => !s)}
+                                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                                    style={{position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                                        border: 0, background: 'transparent', cursor: 'pointer', padding: 6,
+                                        display: 'flex', color: '#6b7280'}}>
+                                {showPassword ? <EyeOff size={18} aria-hidden="true"/> : <Eye size={18} aria-hidden="true"/>}
+                            </button>
+                        </div>
+                    </label>
+                    {mode === 'register' && (
+                        <label className="label">Xác nhận mật khẩu
+                            <input className="input" type={showPassword ? 'text' : 'password'} minLength="6"
+                                   value={form.confirmPassword}
+                                   onChange={e => change('confirmPassword', e.target.value)}
+                                   placeholder="Nhập lại mật khẩu"
+                                   autoComplete="new-password"
+                                   required/>
+                        </label>
+                    )}
                     {error && <div className="error">{error}</div>}
+                    {success && (
+                        <div role="status" style={{margin: '14px 0 0', padding: '10px 14px', borderRadius: 10,
+                            background: '#ecfdf3', color: '#067647', fontSize: 14, fontWeight: 500}}>
+                            {success}
+                        </div>
+                    )}
                     <button className="btn primary auth-submit"
-                            disabled={loading}>{loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}</button>
+                            disabled={loading || !!success}>{loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}</button>
                 </form>
             </div>
         </main>

@@ -1,38 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import MoneyInput from "../../../components/ui/MoneyInput";
 import { formatVnd } from "../../../utils/format";
+import {
+  Button, CONTROL, Chip, ConfirmDialog, ErrorText, Note, Textarea, cn,
+} from "../../../components/admin/ui";
 
 const QUICK_AMOUNTS = [100000, 200000, 500000, 1000000];
 const REASON_MAX = 500;
 const REF_MAX = 60;
 
-/** Hộp xác nhận cho thao tác tiền: hiển thị rõ số tiền và số dư sau khi thực hiện. */
-export function ConfirmDialog({ title, lines, confirmLabel, danger, busy, onConfirm, onCancel }) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape" && !busy) onCancel(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [busy, onCancel]);
+const FORM = "flex flex-col gap-2 rounded-[14px] border-[1px] border-line bg-surface p-16px";
+const LABEL = "mt-1 text-[13px] font-semibold text-ink";
 
-  return (
-    <div
-      className="wa-modal-backdrop"
-      role="presentation"
-      onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onCancel(); }}
-    >
-      <div className="wa-modal" role="alertdialog" aria-modal="true" aria-labelledby="wl-confirm-title">
-        <h3 id="wl-confirm-title">{title}</h3>
-        {lines.map((l, i) => <p key={i}>{l}</p>)}
-        <div className="wa-actions">
-          <button type="button" className="wa-cancel" disabled={busy} onClick={onCancel}>Hủy</button>
-          <button type="button" className={danger ? "wa-reject" : "wa-approve"} disabled={busy} onClick={onConfirm}>
-            {busy ? "Đang xử lý..." : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function Optional({ children }) {
+  return <small className="font-normal text-subtle">{children}</small>;
 }
 
 /** Nạp tiền: thợ đã nộp tiền hoa hồng cho công ty. Mã tham chiếu giúp chống ghi nhận trùng. */
@@ -66,37 +48,33 @@ export function TopUpForm({ wallet, onSubmit, onClose }) {
   };
 
   return (
-    <form className="wl-form" onSubmit={submit} noValidate>
-      <h3>Nạp tiền vào ví</h3>
+    <form className={FORM} onSubmit={submit} noValidate>
+      <h3 className="m-0 mb-1 text-[15px] font-bold text-brand-dark">Nạp tiền vào ví</h3>
 
-      <label htmlFor="wl-topup-amount">Số tiền (VND)</label>
-      <MoneyInput id="wl-topup-amount" className="wl-input" value={amount} onChange={setAmount} placeholder="Ví dụ: 500.000" autoFocus />
-      <div className="wl-quick">
+      <label htmlFor="wl-topup-amount" className={LABEL}>Số tiền (VND)</label>
+      <MoneyInput id="wl-topup-amount" className={cn(CONTROL, "w-full")} value={amount} onChange={setAmount} placeholder="Ví dụ: 500.000" autoFocus />
+      <div className="flex flex-wrap gap-1.5">
         {QUICK_AMOUNTS.map((v) => (
-          <button type="button" key={v} className="wa-chip wa-chip-btn" onClick={() => setAmount(v)}>
-            {formatVnd(v)}
-          </button>
+          <Chip variant="action" key={v} onClick={() => setAmount(v)}>{formatVnd(v)}</Chip>
         ))}
       </div>
 
-      <label htmlFor="wl-topup-ref">Mã tham chiếu ngân hàng <small>(không bắt buộc)</small></label>
+      <label htmlFor="wl-topup-ref" className={LABEL}>Mã tham chiếu ngân hàng <Optional>(không bắt buộc)</Optional></label>
       <input
-        id="wl-topup-ref" className="wl-input" value={referenceCode} maxLength={REF_MAX}
+        id="wl-topup-ref" className={cn(CONTROL, "w-full")} value={referenceCode} maxLength={REF_MAX}
         onChange={(e) => setReferenceCode(e.target.value)} placeholder="Ví dụ: FT26284123456"
       />
-      <p className="wl-hint">Cùng một mã chỉ được ghi nhận một lần, tránh nạp trùng khi bấm nhầm hai lần.</p>
+      <p className="m-0 text-[11.5px] text-subtle">Cùng một mã chỉ được ghi nhận một lần, tránh nạp trùng khi bấm nhầm hai lần.</p>
 
-      <label htmlFor="wl-topup-note">Ghi chú <small>(không bắt buộc)</small></label>
-      <input id="wl-topup-note" className="wl-input" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
+      <label htmlFor="wl-topup-note" className={LABEL}>Ghi chú <Optional>(không bắt buộc)</Optional></label>
+      <input id="wl-topup-note" className={cn(CONTROL, "w-full")} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
 
-      {amount > 0 && (
-        <p className="wl-preview">Số dư sau khi nạp: <b>{formatVnd(after)}</b></p>
-      )}
-      {error && <p className="wl-form-error" role="alert">{error}</p>}
+      {amount > 0 && <p className="m-0 mt-1 text-[13px] text-ink">Số dư sau khi nạp: <b>{formatVnd(after)}</b></p>}
+      <ErrorText>{error}</ErrorText>
 
-      <div className="wa-actions">
-        <button type="button" className="wa-cancel" onClick={onClose}>Đóng</button>
-        <button type="submit" className="wa-approve">Tiếp tục</button>
+      <div className="mt-1.5 flex gap-2.5">
+        <Button variant="neutral" size="lg" className="flex-1" onClick={onClose}>Đóng</Button>
+        <Button type="submit" size="lg" className="flex-1">Tiếp tục</Button>
       </div>
 
       {confirming && (
@@ -151,49 +129,52 @@ export function AdjustForm({ wallet, onSubmit, onClose }) {
     }
   };
 
-  return (
-    <form className="wl-form" onSubmit={submit} noValidate>
-      <h3>Điều chỉnh số dư</h3>
+  const seg = (active, activeClass) =>
+    cn(
+      "flex-1 cursor-pointer rounded-full border-0 px-2.5 py-[7px] text-[13px] transition-colors",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+      active ? `${activeClass} font-semibold text-white` : "bg-transparent text-ink hover:bg-slate-200",
+    );
 
-      <div className="wl-segment" role="radiogroup" aria-label="Loại điều chỉnh">
-        <button
-          type="button" role="radio" aria-checked={!debit}
-          className={!debit ? "active" : ""} onClick={() => setType("ADJUSTMENT_CREDIT")}
-        >
+  return (
+    <form className={FORM} onSubmit={submit} noValidate>
+      <h3 className="m-0 mb-1 text-[15px] font-bold text-brand-dark">Điều chỉnh số dư</h3>
+
+      <div className="flex gap-[3px] rounded-full bg-slate-100 p-[3px]" role="radiogroup" aria-label="Loại điều chỉnh">
+        <button type="button" role="radio" aria-checked={!debit} className={seg(!debit, "bg-green-600")} onClick={() => setType("ADJUSTMENT_CREDIT")}>
           Tăng số dư
         </button>
-        <button
-          type="button" role="radio" aria-checked={debit}
-          className={debit ? "active wl-segment-debit" : ""} onClick={() => setType("ADJUSTMENT_DEBIT")}
-        >
+        <button type="button" role="radio" aria-checked={debit} className={seg(debit, "bg-red-500")} onClick={() => setType("ADJUSTMENT_DEBIT")}>
           Giảm số dư
         </button>
       </div>
 
-      <label htmlFor="wl-adj-amount">Số tiền (VND)</label>
-      <MoneyInput id="wl-adj-amount" className="wl-input" value={amount} onChange={setAmount} placeholder="Ví dụ: 50.000" autoFocus />
+      <label htmlFor="wl-adj-amount" className={LABEL}>Số tiền (VND)</label>
+      <MoneyInput id="wl-adj-amount" className={cn(CONTROL, "w-full")} value={amount} onChange={setAmount} placeholder="Ví dụ: 50.000" autoFocus />
 
-      <label htmlFor="wl-adj-reason">Lý do <small>(bắt buộc, lưu vào sổ cái)</small></label>
-      <textarea
-        id="wl-adj-reason" className="wl-input wl-textarea" rows={3} maxLength={REASON_MAX} value={reason}
+      <label htmlFor="wl-adj-reason" className={LABEL}>Lý do <Optional>(bắt buộc, lưu vào sổ cái)</Optional></label>
+      <Textarea
+        id="wl-adj-reason" className="w-full resize-y" rows={3} maxLength={REASON_MAX} value={reason}
         onChange={(e) => setReason(e.target.value)} placeholder="Ví dụ: Sửa nhầm hoa hồng đơn TN-1042"
       />
-      <small className="wa-counter">{reason.length}/{REASON_MAX}</small>
+      <small className="self-end text-[11.5px] text-subtle">{reason.length}/{REASON_MAX}</small>
 
       {amount > 0 && (
-        <p className="wl-preview">Số dư sau điều chỉnh: <b className={after < 0 ? "wl-neg" : ""}>{formatVnd(after)}</b></p>
-      )}
-      {willBlock && (
-        <p className="wl-warning">
-          <AlertTriangle size={14} aria-hidden="true" />
-          Số dư sau điều chỉnh thấp hơn mức tối thiểu ({formatVnd(min)}), thợ sẽ không nhận được đơn mới.
+        <p className="m-0 mt-1 text-[13px] text-ink">
+          Số dư sau điều chỉnh: <b className={after < 0 ? "text-red-700" : ""}>{formatVnd(after)}</b>
         </p>
       )}
-      {error && <p className="wl-form-error" role="alert">{error}</p>}
+      {willBlock && (
+        <Note className="flex items-start gap-1.5">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>Số dư sau điều chỉnh thấp hơn mức tối thiểu ({formatVnd(min)}), thợ sẽ không nhận được đơn mới.</span>
+        </Note>
+      )}
+      <ErrorText>{error}</ErrorText>
 
-      <div className="wa-actions">
-        <button type="button" className="wa-cancel" onClick={onClose}>Đóng</button>
-        <button type="submit" className={debit ? "wa-reject" : "wa-approve"}>Tiếp tục</button>
+      <div className="mt-1.5 flex gap-2.5">
+        <Button variant="neutral" size="lg" className="flex-1" onClick={onClose}>Đóng</Button>
+        <Button type="submit" size="lg" variant={debit ? "danger" : "success"} className="flex-1">Tiếp tục</Button>
       </div>
 
       {confirming && (

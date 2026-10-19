@@ -1,3 +1,4 @@
+import {useEffect, useRef, useState} from 'react';
 import {Routes, Route, Link, useNavigate, useParams, Navigate} from 'react-router-dom';
 import CreateRequestPage from '../../pages/customer/CreateRequestPage.jsx';
 import ProfilePage from '../../pages/customer/ProfilePage.jsx';
@@ -6,33 +7,70 @@ import MyRequestsPage from '../../pages/customer/MyRequestsPage.jsx';
 import RequireAuth from '../../auth/RequireAuth.jsx';
 import {useAuth} from '../../auth/useAuth';
 import logoImg from '../../assets/logo.png';
-import {ArrowRight, Zap, Droplet, Snowflake, Wrench, Settings, Copyright} from 'lucide-react';
+import {ArrowRight, Zap, Droplet, Snowflake, Wrench, Settings, Copyright, Menu, X} from 'lucide-react';
+import DashboardPage from '../../pages/customer/DashboardPage.jsx';
+
 
 function CustomerHeader({user}) {
     const nav = useNavigate();
     const {logout} = useAuth();
+    // Màn nhỏ: các liên kết gom vào menu bấm mở (nút ☰) thay vì bị ẩn đi
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef(null);
+
     const signOut = async () => {
         await logout();
         nav('/auth', {replace: true});
     };
 
-    return <header className="customer-navbar">
+    // Đóng menu khi bấm Esc hoặc bấm ra ngoài thanh menu
+    useEffect(() => {
+        if (!open) return undefined;
+        const onKey = (e) => {
+            if (e.key === 'Escape') setOpen(false);
+        };
+        const onDown = (e) => {
+            if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('mousedown', onDown);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('mousedown', onDown);
+        };
+    }, [open]);
+
+    // Bấm vào bất kỳ liên kết/nút nào trong menu thì đóng menu lại
+    const closeOnItem = (e) => {
+        if (e.target.closest('a, button')) setOpen(false);
+    };
+
+    return <header className="customer-navbar" ref={rootRef}>
         <div className="customer-navbar-inner">
             <Link className="customer-brand" to="/">
                 <img src={logoImg} alt="Thợ Nhà"/>
                 <div><strong>Thợ Nhà</strong><span>Sửa chữa tại nhà</span></div>
             </Link>
-            <nav className="customer-nav">
-                <Link to="/">Trang chủ</Link>
-                <a href="#services">Dịch vụ</a>
-                <a href="#process">Cách hoạt động</a>
+            <button type="button" className="customer-menu-toggle" aria-expanded={open} aria-controls="customer-nav"
+                    aria-label={open ? 'Đóng menu' : 'Mở menu'} onClick={() => setOpen((o) => !o)}>
+                {open ? <X size={22} aria-hidden="true"/> : <Menu size={22} aria-hidden="true"/>}
+            </button>
+            <nav id="customer-nav" className={`customer-nav${open ? ' open' : ''}`} onClick={closeOnItem}>
                 {user ? <>
+                    <Link to="/dashboard">Tổng quan</Link>
                     <Link to="/requests">Yêu cầu của tôi</Link>
                     <Link to="/profile">Hồ sơ</Link>
-                    <Link to={user.roles?.includes('WORKER') ? '/worker/dashboard' : '/worker'}>Khu vực thợ</Link>
+                    {user.roles?.includes('WORKER')
+                        ? <Link to="/worker/dashboard">Khu vực thợ</Link>
+                        : <Link to="/worker/register">Trở thành thợ</Link>}
                     <button className="customer-primary" onClick={() => nav('/create')}>Tạo yêu cầu</button>
                     <button className="customer-login" onClick={signOut}>Đăng xuất</button>
-                </> : <Link className="customer-login" to="/auth">Đăng nhập</Link>}
+                </> : <>
+                    <a href="#services">Dịch vụ</a>
+                    <a href="#process">Cách hoạt động</a>
+                    <Link to="/worker">Trở thành thợ</Link>
+                    <Link className="customer-login" to="/auth">Đăng nhập</Link>
+                </>}
             </nav>
         </div>
     </header>;
@@ -104,6 +142,12 @@ function Landing() {
                 {u ? <button className="customer-action primary" onClick={() => nav('/create')}>Tạo yêu cầu ngay</button> : <Link className="customer-action primary" to="/auth">Đăng nhập / Đăng ký</Link>}
             </div>
         </section>
+        {!hasRole('WORKER') && <section className="customer-cta">
+            <div className="customer-cta-inner">
+                <div><h2>Bạn là thợ lành nghề?</h2><p>Đăng ký trở thành đối tác Thợ Nhà để nhận việc gần bạn và tự chủ thu nhập.</p></div>
+                {u ? <Link className="customer-action primary" to="/worker/register">Đăng ký làm thợ <ArrowRight size={18} className="ms-2" aria-hidden="true"/></Link> : <Link className="customer-action primary" to="/worker">Tìm hiểu &amp; đăng ký làm thợ</Link>}
+            </div>
+        </section>}
         <footer className="customer-footer"><Copyright size={13} aria-hidden="true" style={{verticalAlign: '-2px'}}/> 2026 Thợ Nhà | Nền tảng kết nối dịch vụ sửa chữa tại nhà</footer>
     </div>;
 }
@@ -125,6 +169,7 @@ export default function CustomerApp() {
     return <CustomerRoute><Routes>
         <Route index element={<Landing/>}/>
         <Route element={<RequireAuth/>}>
+            <Route path="dashboard" element={<DashboardPage/>}/>
             <Route path="create" element={<CreateRequestPage/>}/>
             <Route path="profile" element={<ProfileRoute/>}/>
             <Route path="requests" element={<MyRequestsPage/>}/>

@@ -3,9 +3,8 @@ import { fetchUsers, updateUserStatus } from "../../../api/userApi";
 import { useConfirm } from "../../../components/ui/confirm/confirmContext";
 import UserFilters from "./UserFilters";
 import UserTable from "./UserTable";
-import Pagination from "./Pagination";
 import UserDetailModal from "./UserDetailModal";
-import "./UserManagement.css";
+import { Notice, PageShell, Pagination } from "../../../components/admin/ui";
 
 const PAGE_SIZE = 20;
 const EMPTY_FILTERS = { keyword: "", role: "", userStatus: "" };
@@ -66,19 +65,10 @@ export default function UserManagement({ onView }) {
   };
 
   return (
-    <section className="um-page">
-      <header className="um-header">
-        <h1>Quản lý người dùng</h1>
-      </header>
-
-      <div className="um-panel">
-        <UserFilters filters={filters} onChange={setFilters} onSearch={handleSearch} />
-        {actionError && (
-          <div className="um-action-error" role="alert">
-            {actionError}{" "}
-            <button type="button" onClick={() => setActionError("")}>Đóng</button>
-          </div>
-        )}
+    <PageShell title="Quản lý người dùng">
+      <UserFilters filters={filters} onChange={setFilters} onSearch={handleSearch} />
+      {actionError && <Notice type="error" onClose={() => setActionError("")}>{actionError}</Notice>}
+      <div>
         <UserTable
           users={data.content}
           loading={loading}
@@ -92,6 +82,6 @@ export default function UserManagement({ onView }) {
       {viewingId != null && (
         <UserDetailModal userId={viewingId} onClose={() => setViewingId(null)} />
       )}
-    </section>
+    </PageShell>
   );
 }

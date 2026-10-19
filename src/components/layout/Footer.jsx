@@ -1,4 +1,5 @@
 import { Copyright } from "lucide-react";
+import { Link } from "react-router-dom";
 import logoImg from "../../assets/logo.png"; 
 
 export function Footer() {
@@ -51,18 +52,8 @@ export function Footer() {
           <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-2">
             Về Thợ Nhà
           </h4>
-          <a
-            href="#"
-            className="text-xs text-gray-400 hover:text-white transition-colors"
-          >
-            Giới thiệu
-          </a>
-          <a
-            href="#"
-            className="text-xs text-gray-400 hover:text-white transition-colors"
-          >
-            Trở thành đối tác thợ
-          </a>
+          <Link to="/worker" className="text-xs text-gray-400 hover:text-white transition-colors">Giới thiệu</Link>
+          <Link to="/worker/register" className="text-xs text-gray-400 hover:text-white transition-colors">Trở thành đối tác thợ</Link>
           <a
             href="#"
             className="text-xs text-gray-400 hover:text-white transition-colors"
