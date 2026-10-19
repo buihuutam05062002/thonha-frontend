@@ -52,7 +52,7 @@ export default function PaymentPanel({requestId, requestStatus, acceptedAmount, 
                 Thanh toán trực tiếp cho thợ
             </div>
             <div style={{fontSize: 14}}>
-                Số tiền theo báo giá đã chấp nhận: <b>{formatVnd(acceptedAmount)}</b>.
+                Tổng các báo giá đã chấp nhận: <b>{formatVnd(acceptedAmount)}</b>.
             </div>
             <div style={{fontSize: 13, color: '#6b7280', marginTop: 6}}>
                 Sau khi thợ sửa xong, bạn trả tiền mặt hoặc chuyển khoản trực tiếp cho thợ.

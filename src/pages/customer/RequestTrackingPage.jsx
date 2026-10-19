@@ -31,7 +31,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
     const [cancelling, setCancelling] = useState(false);
     const [actionError, setActionError] = useState('');
     const [workerLoc, setWorkerLoc] = useState(null);
-    const [acceptedQuotation, setAcceptedQuotation] = useState(null);
+    const [acceptedTotal, setAcceptedTotal] = useState(null);
     const [paymentVersion, setPaymentVersion] = useState(0);
     const refreshTimer = useRef(null);
     const userId = useAuth().user?.id;
@@ -208,11 +208,14 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
                 requestId={requestId}
                 role="customer"
                 active={!TERMINAL.includes(request.status)}
-                onLoaded={(list) =>
-                  setAcceptedQuotation(
-                    list.find((q) => q.status === "ACCEPTED") ?? null,
-                  )
-                }
+                onLoaded={(list) => {
+                    const accepted = list.filter((q) => q.status === "ACCEPTED");
+                    setAcceptedTotal(
+                        accepted.length
+                            ? accepted.reduce((sum, q) => sum + Number(q.totalAmount ?? 0), 0)
+                            : null,
+                    );
+                }}
               />
             )}
 
@@ -224,7 +227,7 @@ export default function RequestTrackingPage({requestId, onBack, onCreateAnother,
               <PaymentPanel
                 requestId={requestId}
                 requestStatus={request.status}
-                acceptedAmount={acceptedQuotation?.totalAmount ?? null}
+                acceptedAmount={acceptedTotal}
                 version={`${request.updatedAt ?? ""}|${paymentVersion}`}
               />
             )}
